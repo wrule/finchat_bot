@@ -1,0 +1,11 @@
+{
+  "name": "scty_bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/wrule/scty_bot.git",
+  "license": "MIT",
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
