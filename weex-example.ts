@@ -3006,6 +3006,26 @@ async function testAdjustMargin() {
   );
 
   try {
+    // 步骤 0: 查询合约账户资产
+    console.log('💰 步骤 0: 查询合约账户资产');
+    console.log('-----------------------------------\n');
+
+    const contractAssets = await client.getContractAccountAssets();
+
+    console.log('合约账户资产:');
+    if (contractAssets && contractAssets.length > 0) {
+      contractAssets.forEach(asset => {
+        console.log(`  ${asset.coinName}:`);
+        console.log(`    可用余额: ${asset.available}`);
+        console.log(`    冻结余额: ${asset.frozen}`);
+        console.log(`    总余额: ${(parseFloat(asset.available) + parseFloat(asset.frozen)).toFixed(8)}`);
+        console.log('');
+      });
+    } else {
+      console.log('  暂无资产');
+    }
+    console.log('-----------------------------------\n');
+
     // 步骤 1: 查询当前持仓
     console.log('📊 步骤 1: 查询当前持仓');
     console.log('-----------------------------------\n');
@@ -3178,14 +3198,296 @@ async function testAdjustMargin() {
 }
 
 /**
+ * 测试合约开仓和平仓
+ */
+async function testContractOpenAndClose() {
+  console.log('\n=== 测试合约开仓和平仓 ===\n');
+
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  if (!apiKey || !secretKey || !passphrase) {
+    console.error('❌ 请在 .env 文件中配置 API 密钥');
+    return;
+  }
+
+  // 合约 API 客户端
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase,
+    'https://pro-openapi.weex.tech'
+  );
+
+  try {
+    // 步骤 1: 查询合约账户资产
+    console.log('💰 步骤 1: 查询合约账户资产');
+    console.log('-----------------------------------\n');
+
+    const contractAssets = await client.getContractAccountAssets();
+
+    console.log('合约账户资产:');
+    if (contractAssets && contractAssets.length > 0) {
+      contractAssets.forEach(asset => {
+        console.log(`  ${asset.coinName}:`);
+        console.log(`    可用余额: ${asset.available}`);
+        console.log(`    冻结余额: ${asset.frozen}`);
+        console.log(`    总余额: ${(parseFloat(asset.available) + parseFloat(asset.frozen)).toFixed(8)}`);
+      });
+    } else {
+      console.log('  暂无资产');
+    }
+    console.log('-----------------------------------\n');
+
+    // 步骤 2: 查询用户设置
+    console.log('⚙️  步骤 2: 查询用户设置');
+    console.log('-----------------------------------\n');
+
+    const userSettings = await client.getUserSettings();
+
+    console.log('用户设置:');
+    console.log('  账户 ID:', userSettings.accountId);
+    console.log('  合约模式设置:', JSON.stringify(userSettings.contract_id_to_mode_setting, null, 2));
+    console.log('-----------------------------------\n');
+
+    // 步骤 3: 设置账户模式
+    console.log('⚙️  步骤 3: 设置账户模式');
+    console.log('-----------------------------------\n');
+
+    console.log('设置为全仓 + 合并模式...');
+
+    await client.changeHoldModel({
+      symbol: 'cmt_btcusdt',
+      marginMode: 1,      // 全仓模式
+      separatedMode: 1    // 合并模式
+    });
+
+    console.log('✅ 账户模式设置成功！');
+    console.log('-----------------------------------\n');
+
+    // 步骤 4: 获取当前价格
+    console.log('📊 步骤 4: 获取 BTC/USDT 当前价格');
+    console.log('-----------------------------------\n');
+
+    const ticker = await client.getSingleTicker({ symbol: 'cmt_btcusdt' });
+    const currentPrice = parseFloat(ticker.last);
+
+    console.log(`当前价格: $${currentPrice.toLocaleString()}`);
+    console.log(`买一价: $${parseFloat(ticker.best_bid).toLocaleString()}`);
+    console.log(`卖一价: $${parseFloat(ticker.best_ask).toLocaleString()}`);
+    console.log('-----------------------------------\n');
+
+    // 步骤 5: 开多仓（市价单）
+    console.log('📈 步骤 5: 开多仓（市价买入）');
+    console.log('-----------------------------------\n');
+
+    console.log('⚙️  下单参数:');
+    console.log('  交易对: cmt_btcusdt');
+    console.log('  方向: 1 (开多)');
+    console.log('  价格匹配: 1 (市价)');
+    console.log('  订单执行类型: 0 (普通)');
+    console.log('  保证金模式: 1 (全仓)');
+    console.log('  数量: 0.001 BTC');
+    console.log('  预计成本:', `$${(currentPrice * 0.001).toFixed(2)}`);
+    console.log('');
+
+    const clientOid = `open_${Date.now()}`;
+
+    const openOrder = await client.placeOrder({
+      symbol: 'cmt_btcusdt',
+      client_oid: clientOid,
+      size: '0.001',
+      type: '1',           // 1-开多
+      order_type: '0',     // 0-普通订单
+      match_price: '1',    // 1-市价
+      price: '',           // 市价单价格为空
+      marginMode: 1,       // 1-全仓模式
+      separatedMode: 1     // 1-合并模式
+    });
+
+    console.log('✅ 开仓订单已提交！');
+    console.log('订单 ID:', openOrder.order_id);
+    console.log('客户端订单 ID:', openOrder.client_oid);
+    console.log('-----------------------------------\n');
+
+    // 等待订单成交
+    console.log('⏳ 等待订单成交...\n');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // 步骤 6: 查询持仓
+    console.log('📊 步骤 6: 查询当前持仓');
+    console.log('-----------------------------------\n');
+
+    const positions = await client.getSinglePosition({
+      symbol: 'cmt_btcusdt'
+    });
+
+    if (positions && positions.length > 0) {
+      const position = positions[0];
+      console.log('持仓信息:');
+      console.log('  持仓 ID:', position.id);
+      console.log('  交易对:', position.symbol);
+      console.log('  方向:', position.side);
+      console.log('  数量:', position.size);
+      console.log('  杠杆:', position.leverage + 'x');
+      console.log('  保证金模式:', position.margin_mode);
+      console.log('  开仓价值:', position.open_value);
+      console.log('  未实现盈亏:', position.unrealizePnl);
+      console.log('  强平价:', position.liquidatePrice);
+      console.log('-----------------------------------\n');
+
+      // 步骤 7: 查询成交记录
+      console.log('📋 步骤 7: 查询成交记录');
+      console.log('-----------------------------------\n');
+
+      const fillsResponse = await client.getFills({
+        symbol: 'cmt_btcusdt',
+        limit: 5
+      });
+
+      if (fillsResponse && fillsResponse.list && fillsResponse.list.length > 0) {
+        console.log(`最近 ${fillsResponse.list.length} 笔成交:`);
+        fillsResponse.list.forEach((fill, index) => {
+          console.log(`\n  成交 ${index + 1}:`);
+          console.log(`    成交 ID: ${fill.tradeId}`);
+          console.log(`    订单 ID: ${fill.orderId}`);
+          console.log(`    方向: ${fill.orderSide}`);
+          console.log(`    数量: ${fill.fillSize}`);
+          console.log(`    金额: $${parseFloat(fill.fillValue).toFixed(2)}`);
+          console.log(`    手续费: ${fill.fillFee}`);
+          console.log(`    已实现盈亏: ${fill.realizePnl}`);
+        });
+      }
+      console.log('\n-----------------------------------\n');
+
+      // 等待一下，让用户看到持仓信息
+      console.log('⏳ 持仓中... 5 秒后平仓\n');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // 步骤 8: 平仓（市价单）
+      console.log('📉 步骤 8: 平仓（市价卖出）');
+      console.log('-----------------------------------\n');
+
+      console.log('⚙️  平仓参数:');
+      console.log('  交易对: cmt_btcusdt');
+      console.log('  方向: 3 (平多)');
+      console.log('  价格匹配: 1 (市价)');
+      console.log('  数量:', position.size);
+      console.log('');
+
+      const closeClientOid = `close_${Date.now()}`;
+
+      const closeOrder = await client.placeOrder({
+        symbol: 'cmt_btcusdt',
+        client_oid: closeClientOid,
+        size: position.size,
+        type: '3',           // 3-平多
+        order_type: '0',     // 0-普通订单
+        match_price: '1',    // 1-市价
+        price: '',           // 市价单价格为空
+        marginMode: 1,       // 1-全仓模式
+        separatedMode: 1     // 1-合并模式
+      });
+
+      console.log('✅ 平仓订单已提交！');
+      console.log('订单 ID:', closeOrder.order_id);
+      console.log('客户端订单 ID:', closeOrder.client_oid);
+      console.log('-----------------------------------\n');
+
+      // 等待平仓完成
+      console.log('⏳ 等待平仓完成...\n');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // 步骤 9: 确认平仓
+      console.log('📊 步骤 9: 确认平仓结果');
+      console.log('-----------------------------------\n');
+
+      const positionsAfter = await client.getSinglePosition({
+        symbol: 'cmt_btcusdt'
+      });
+
+      if (!positionsAfter || positionsAfter.length === 0 || parseFloat(positionsAfter[0].size) === 0) {
+        console.log('✅ 平仓成功！当前无持仓');
+      } else {
+        console.log('持仓信息:');
+        console.log('  数量:', positionsAfter[0].size);
+        console.log('  未实现盈亏:', positionsAfter[0].unrealizePnl);
+      }
+      console.log('-----------------------------------\n');
+
+      // 步骤 10: 查询最终资产
+      console.log('💰 步骤 10: 查询最终资产');
+      console.log('-----------------------------------\n');
+
+      const finalAssets = await client.getContractAccountAssets();
+
+      if (finalAssets && finalAssets.length > 0) {
+        finalAssets.forEach(asset => {
+          console.log(`  ${asset.coinName}:`);
+          console.log(`    可用余额: ${asset.available}`);
+          console.log(`    总余额: ${(parseFloat(asset.available) + parseFloat(asset.frozen)).toFixed(8)}`);
+        });
+      }
+      console.log('-----------------------------------\n');
+
+      // 计算盈亏
+      const initialBalance = 1000;
+      const finalBalance = parseFloat(finalAssets[0].available) + parseFloat(finalAssets[0].frozen);
+      const pnl = finalBalance - initialBalance;
+
+      console.log('📊 交易总结');
+      console.log('-----------------------------------');
+      console.log('  初始余额:', initialBalance.toFixed(2), 'USDT');
+      console.log('  最终余额:', finalBalance.toFixed(2), 'USDT');
+      console.log('  盈亏:', pnl >= 0 ? `+${pnl.toFixed(2)}` : pnl.toFixed(2), 'USDT');
+      console.log('  收益率:', ((pnl / initialBalance) * 100).toFixed(4) + '%');
+      console.log('-----------------------------------');
+
+    } else {
+      console.log('⚠️  未找到持仓，可能订单未成交');
+    }
+
+    console.log('\n💡 测试说明:');
+    console.log('-----------------------------------');
+    console.log('1. 开仓流程:');
+    console.log('   - 查询账户资产');
+    console.log('   - 获取当前价格');
+    console.log('   - 提交市价买单（做多）');
+    console.log('   - 等待订单成交');
+    console.log('');
+    console.log('2. 持仓管理:');
+    console.log('   - 查询持仓信息');
+    console.log('   - 监控未实现盈亏');
+    console.log('   - 查看强平价');
+    console.log('');
+    console.log('3. 平仓流程:');
+    console.log('   - 提交市价卖单（平多仓）');
+    console.log('   - 等待平仓完成');
+    console.log('   - 确认持仓已清空');
+    console.log('');
+    console.log('4. AI 交易应用:');
+    console.log('   - 根据信号自动开仓');
+    console.log('   - 监控盈亏自动平仓');
+    console.log('   - 止盈止损策略');
+    console.log('   - 风险控制');
+    console.log('-----------------------------------');
+
+  } catch (error) {
+    console.error('❌ 测试失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试调整持仓保证金
-    await testAdjustMargin();
+    // 测试合约开仓和平仓
+    await testContractOpenAndClose();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {
