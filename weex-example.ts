@@ -2109,14 +2109,177 @@ async function testGetOrderBookDepth() {
 }
 
 /**
+ * 测试获取所有 Ticker
+ */
+async function testGetAllTickers() {
+  console.log('\n=== 测试获取所有 Ticker ===\n');
+
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  // 合约 API 客户端（公共接口不需要密钥）
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase,
+    'https://pro-openapi.weex.tech'
+  );
+
+  try {
+    console.log('📊 获取所有交易对的 Ticker 信息...\n');
+
+    const tickers = await client.getAllTickers();
+
+    console.log('✅ 成功获取所有 Ticker！');
+    console.log('交易对数量:', tickers.length);
+    console.log('');
+
+    // 按 24 小时涨幅排序
+    const sortedByChange = [...tickers].sort((a, b) =>
+      parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent)
+    );
+
+    // 显示涨幅前 10
+    console.log('📈 24小时涨幅榜 TOP 10:');
+    console.log('-----------------------------------');
+    console.log('排名\t交易对\t\t\t涨幅\t\t最新价');
+    sortedByChange.slice(0, 10).forEach((ticker, index) => {
+      const symbol = ticker.symbol.replace('cmt_', '').toUpperCase();
+      const change = (parseFloat(ticker.priceChangePercent) * 100).toFixed(2);
+      const price = parseFloat(ticker.last).toFixed(ticker.last.includes('.') ? 4 : 2);
+      const changeColor = parseFloat(ticker.priceChangePercent) >= 0 ? '🟢' : '🔴';
+      console.log(`${index + 1}\t${symbol.padEnd(16)}\t${changeColor} ${change}%\t\t${price}`);
+    });
+    console.log('');
+
+    // 显示跌幅前 10
+    console.log('📉 24小时跌幅榜 TOP 10:');
+    console.log('-----------------------------------');
+    console.log('排名\t交易对\t\t\t跌幅\t\t最新价');
+    sortedByChange.slice(-10).reverse().forEach((ticker, index) => {
+      const symbol = ticker.symbol.replace('cmt_', '').toUpperCase();
+      const change = (parseFloat(ticker.priceChangePercent) * 100).toFixed(2);
+      const price = parseFloat(ticker.last).toFixed(ticker.last.includes('.') ? 4 : 2);
+      const changeColor = parseFloat(ticker.priceChangePercent) >= 0 ? '🟢' : '🔴';
+      console.log(`${index + 1}\t${symbol.padEnd(16)}\t${changeColor} ${change}%\t\t${price}`);
+    });
+    console.log('');
+
+    // 按成交量排序
+    const sortedByVolume = [...tickers].sort((a, b) =>
+      parseFloat(b.volume_24h) - parseFloat(a.volume_24h)
+    );
+
+    console.log('💰 24小时成交量榜 TOP 10:');
+    console.log('-----------------------------------');
+    console.log('排名\t交易对\t\t\t成交量\t\t\t最新价');
+    sortedByVolume.slice(0, 10).forEach((ticker, index) => {
+      const symbol = ticker.symbol.replace('cmt_', '').toUpperCase();
+      const volume = parseFloat(ticker.volume_24h).toLocaleString('en-US', {
+        maximumFractionDigits: 0
+      });
+      const price = parseFloat(ticker.last).toFixed(ticker.last.includes('.') ? 4 : 2);
+      console.log(`${index + 1}\t${symbol.padEnd(16)}\t${volume.padEnd(20)}\t${price}`);
+    });
+    console.log('');
+
+    // 主流币种详细信息
+    const mainCoins = ['cmt_btcusdt', 'cmt_ethusdt', 'cmt_solusdt', 'cmt_bnbusdt'];
+    console.log('🌟 主流币种详细信息:');
+    console.log('-----------------------------------');
+
+    mainCoins.forEach(symbol => {
+      const ticker = tickers.find(t => t.symbol === symbol);
+      if (ticker) {
+        const coinName = symbol.replace('cmt_', '').toUpperCase();
+        const change = (parseFloat(ticker.priceChangePercent) * 100).toFixed(2);
+        const changeColor = parseFloat(ticker.priceChangePercent) >= 0 ? '🟢' : '🔴';
+
+        console.log(`\n${coinName}:`);
+        console.log('  最新价:', parseFloat(ticker.last).toFixed(2));
+        console.log('  24h涨跌:', `${changeColor} ${change}%`);
+        console.log('  24h最高:', parseFloat(ticker.high_24h).toFixed(2));
+        console.log('  24h最低:', parseFloat(ticker.low_24h).toFixed(2));
+        console.log('  买一价:', parseFloat(ticker.best_bid).toFixed(2));
+        console.log('  卖一价:', parseFloat(ticker.best_ask).toFixed(2));
+        console.log('  24h成交量:', parseFloat(ticker.volume_24h).toLocaleString('en-US', {
+          maximumFractionDigits: 0
+        }));
+
+        if (ticker.markPrice) {
+          console.log('  标记价格:', parseFloat(ticker.markPrice).toFixed(2));
+        }
+        if (ticker.indexPrice) {
+          console.log('  指数价格:', parseFloat(ticker.indexPrice).toFixed(2));
+        }
+      }
+    });
+    console.log('');
+    console.log('-----------------------------------\n');
+
+    // 市场统计
+    const totalVolume = tickers.reduce((sum, t) => sum + parseFloat(t.volume_24h), 0);
+    const gainers = tickers.filter(t => parseFloat(t.priceChangePercent) > 0).length;
+    const losers = tickers.filter(t => parseFloat(t.priceChangePercent) < 0).length;
+    const unchanged = tickers.filter(t => parseFloat(t.priceChangePercent) === 0).length;
+
+    console.log('📊 市场总览:');
+    console.log('-----------------------------------');
+    console.log('交易对总数:', tickers.length);
+    console.log('上涨:', gainers, `(${(gainers / tickers.length * 100).toFixed(1)}%)`);
+    console.log('下跌:', losers, `(${(losers / tickers.length * 100).toFixed(1)}%)`);
+    console.log('平盘:', unchanged, `(${(unchanged / tickers.length * 100).toFixed(1)}%)`);
+    console.log('24h总成交量:', totalVolume.toLocaleString('en-US', {
+      maximumFractionDigits: 0
+    }));
+    console.log('');
+
+    // 价格区间分析
+    const avgChange = tickers.reduce((sum, t) => sum + parseFloat(t.priceChangePercent), 0) / tickers.length;
+    console.log('平均涨跌幅:', (avgChange * 100).toFixed(2) + '%');
+    console.log('最大涨幅:', (parseFloat(sortedByChange[0].priceChangePercent) * 100).toFixed(2) + '%',
+      `(${sortedByChange[0].symbol.replace('cmt_', '').toUpperCase()})`);
+    console.log('最大跌幅:', (parseFloat(sortedByChange[sortedByChange.length - 1].priceChangePercent) * 100).toFixed(2) + '%',
+      `(${sortedByChange[sortedByChange.length - 1].symbol.replace('cmt_', '').toUpperCase()})`);
+    console.log('-----------------------------------\n');
+
+    console.log('💡 使用提示:');
+    console.log('-----------------------------------');
+    console.log('1. 数据内容:');
+    console.log('   - 所有交易对的实时行情');
+    console.log('   - 24小时价格变化');
+    console.log('   - 成交量统计');
+    console.log('   - 买卖盘口价格');
+    console.log('');
+    console.log('2. 应用场景:');
+    console.log('   - 市场概览和监控');
+    console.log('   - 发现热门交易对');
+    console.log('   - 寻找交易机会');
+    console.log('   - 市场情绪分析');
+    console.log('');
+    console.log('3. 注意事项:');
+    console.log('   - 权重较高（40），注意速率限制');
+    console.log('   - 建议定期轮询（如每分钟一次）');
+    console.log('   - 可用于构建行情看板');
+    console.log('-----------------------------------');
+
+    return tickers;
+  } catch (error) {
+    console.error('❌ 获取所有 Ticker 失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试获取订单簿深度
-    await testGetOrderBookDepth();
+    // 测试获取所有 Ticker
+    await testGetAllTickers();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {

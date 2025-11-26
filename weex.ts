@@ -807,6 +807,36 @@ export interface OrderBookDepthResponse {
 }
 
 /**
+ * Ticker 信息
+ */
+export interface Ticker {
+  /** 交易对 */
+  symbol: string;
+  /** 卖一价 */
+  best_ask: string;
+  /** 买一价 */
+  best_bid: string;
+  /** 24小时最高价 */
+  high_24h: string;
+  /** 最新成交价 */
+  last: string;
+  /** 24小时最低价 */
+  low_24h: string;
+  /** 系统时间戳 */
+  timestamp: string;
+  /** 24小时成交量 */
+  volume_24h: string;
+  /** 24小时价格变化百分比 */
+  priceChangePercent: string;
+  /** 24小时成交量（代币数量） */
+  base_volume: string;
+  /** 标记价格（可选） */
+  markPrice?: string;
+  /** 指数价格（可选） */
+  indexPrice?: string;
+}
+
+/**
  * 账户类型
  */
 export type AccountType = 'SPOT' | 'FUND';
@@ -1155,6 +1185,33 @@ export class WeexApiClient {
       if (axios.isAxiosError(error)) {
         throw new Error(
           `获取订单簿深度失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有交易对的 Ticker 信息（公共接口，无需签名）
+   * GET /capi/v2/market/tickers
+   * Weight(IP): 40
+   * @returns 所有交易对的 Ticker 信息数组
+   */
+  async getAllTickers(): Promise<Ticker[]> {
+    const url = `${this.baseUrl}/capi/v2/market/tickers`;
+
+    try {
+      const response = await axios.get<Ticker[]>(url, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取所有 Ticker 失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;
