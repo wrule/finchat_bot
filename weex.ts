@@ -14,6 +14,52 @@ export interface ServerTimeResponse {
 }
 
 /**
+ * 合约信息响应接口
+ */
+export interface ContractInfo {
+  /** 交易对 */
+  symbol: string;
+  /** 合约标的 */
+  underlying_index: string;
+  /** 计价货币 */
+  quote_currency: string;
+  /** 保证金币种 */
+  coin: string;
+  /** 合约面值 */
+  contract_val: string;
+  /** 创建时间 */
+  listing: string | null;
+  /** 结算时间数组 */
+  delivery: string[];
+  /** 数量精度 */
+  size_increment: string;
+  /** 价格精度 */
+  tick_size: string;
+  /** 是否为 USDT-M 合约 */
+  forwardContractFlag: boolean;
+  /** 价格最后一位小数的步长 */
+  priceEndStep: number;
+  /** 最小杠杆（默认：1） */
+  minLeverage: number;
+  /** 最大杠杆（默认：100） */
+  maxLeverage: number;
+  /** 买入限价比率 */
+  buyLimitPriceRatio: string;
+  /** 卖出限价比率 */
+  sellLimitPriceRatio: string;
+  /** Maker 费率 */
+  makerFeeRate: string;
+  /** Taker 费率 */
+  takerFeeRate: string;
+  /** 最小下单数量（基础货币） */
+  minOrderSize: string;
+  /** 最大下单数量（基础货币） */
+  maxOrderSize: string;
+  /** 最大持仓数量（基础货币） */
+  maxPositionSize: string;
+}
+
+/**
  * Weex OpenAPI Client
  * Based on the official API documentation
  */
@@ -198,6 +244,34 @@ export class WeexApiClient {
       if (axios.isAxiosError(error)) {
         throw new Error(
           `获取服务器时间失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 获取合约信息（公共接口，无需签名）
+   * GET /capi/v2/market/contracts
+   * Weight(IP): 10
+   * @param symbol - 交易对（可选），例如 "cmt_btcusdt"
+   * @returns 合约信息数组
+   */
+  async getContracts(symbol?: string): Promise<ContractInfo[]> {
+    let url = this.baseUrl + '/capi/v2/market/contracts';
+
+    // 如果提供了 symbol 参数，添加到查询字符串
+    if (symbol) {
+      url += `?symbol=${symbol}`;
+    }
+
+    try {
+      const response: AxiosResponse<ContractInfo[]> = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取合约信息失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;
