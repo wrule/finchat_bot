@@ -1973,6 +1973,93 @@ export class WeexApiClient {
       throw error;
     }
   }
+
+  // ==================== 简化的 BTC/USDT 专用接口 ====================
+
+  /**
+   * 开仓 - BTC/USDT 专用简化接口
+   *
+   * @param size - 开仓数量（BTC 数量，如 "0.001"）
+   * @param side - 方向：'LONG' 开多 | 'SHORT' 开空
+   * @returns 订单响应
+   *
+   * @example
+   * // 开多仓 0.001 BTC
+   * const order = await client.openPosition('0.001', 'LONG');
+   *
+   * // 开空仓 0.001 BTC
+   * const order = await client.openPosition('0.001', 'SHORT');
+   */
+  async openPosition(size: string, side: 'LONG' | 'SHORT'): Promise<PlaceOrderResponse> {
+    const clientOid = `open_${side.toLowerCase()}_${Date.now()}`;
+
+    return await this.placeOrder({
+      symbol: 'cmt_btcusdt',
+      client_oid: clientOid,
+      size: size,
+      type: side === 'LONG' ? '1' : '2',  // 1-开多, 2-开空
+      order_type: '0',                     // 0-普通订单
+      match_price: '1',                    // 1-市价
+      price: '',                           // 市价单价格为空
+      marginMode: 1,                       // 1-全仓模式
+      separatedMode: 1                     // 1-合并模式
+    });
+  }
+
+  /**
+   * 平仓 - BTC/USDT 专用简化接口
+   *
+   * @param size - 平仓数量（BTC 数量，如 "0.001"）
+   * @param side - 方向：'LONG' 平多 | 'SHORT' 平空
+   * @returns 订单响应
+   *
+   * @example
+   * // 平多仓 0.001 BTC
+   * const order = await client.closePosition('0.001', 'LONG');
+   *
+   * // 平空仓 0.001 BTC
+   * const order = await client.closePosition('0.001', 'SHORT');
+   */
+  async closePosition(size: string, side: 'LONG' | 'SHORT'): Promise<PlaceOrderResponse> {
+    const clientOid = `close_${side.toLowerCase()}_${Date.now()}`;
+
+    return await this.placeOrder({
+      symbol: 'cmt_btcusdt',
+      client_oid: clientOid,
+      size: size,
+      type: side === 'LONG' ? '3' : '4',  // 3-平多, 4-平空
+      order_type: '0',                     // 0-普通订单
+      match_price: '1',                    // 1-市价
+      price: '',                           // 市价单价格为空
+      marginMode: 1,                       // 1-全仓模式
+      separatedMode: 1                     // 1-合并模式
+    });
+  }
+
+  /**
+   * 获取当前持仓 - BTC/USDT 专用简化接口
+   *
+   * @returns 持仓信息，如果没有持仓返回 null
+   *
+   * @example
+   * const position = await client.getCurrentPosition();
+   * if (position) {
+   *   console.log('持仓方向:', position.side);
+   *   console.log('持仓数量:', position.size);
+   *   console.log('未实现盈亏:', position.unrealizePnl);
+   * } else {
+   *   console.log('当前无持仓');
+   * }
+   */
+  async getCurrentPosition(): Promise<SinglePosition | null> {
+    const positions = await this.getSinglePosition({ symbol: 'cmt_btcusdt' });
+
+    if (positions && positions.length > 0) {
+      return positions[0];
+    }
+
+    return null;
+  }
 }
 
 /**
