@@ -721,6 +721,34 @@ export interface GetSinglePositionParams {
 }
 
 /**
+ * 单个合约的用户设置
+ */
+export interface FuturesUserSettings {
+  /** 逐仓多头杠杆 */
+  isolated_long_leverage: string;
+  /** 逐仓空头杠杆 */
+  isolated_short_leverage: string;
+  /** 全仓杠杆 */
+  cross_leverage: string;
+}
+
+/**
+ * 获取用户设置请求参数
+ */
+export interface GetUserSettingsParams {
+  /** 交易对（可选） */
+  symbol?: string;
+}
+
+/**
+ * 获取用户设置响应
+ * 键为交易对名称，值为该交易对的设置
+ */
+export type GetUserSettingsResponse = {
+  [symbol: string]: FuturesUserSettings;
+};
+
+/**
  * 账户类型
  */
 export type AccountType = 'SPOT' | 'FUND';
@@ -1352,6 +1380,38 @@ export class WeexApiClient {
       if (axios.isAxiosError(error)) {
         throw new Error(
           `获取单个仓位失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 获取单个合约的用户设置
+   * GET /capi/v2/account/settings
+   * Weight(IP): 1, Weight(UID): 1
+   * 需要权限：合约账户读取权限
+   * @param params - 查询参数（可选）
+   * @returns 用户设置响应
+   */
+  async getUserSettings(params?: GetUserSettingsParams): Promise<GetUserSettingsResponse> {
+    const requestPath = '/capi/v2/account/settings';
+
+    // 构建查询字符串
+    const queryString = params?.symbol
+      ? `symbol=${encodeURIComponent(params.symbol)}`
+      : '';
+
+    try {
+      const response = await this.sendRequestGet<GetUserSettingsResponse>(
+        requestPath,
+        queryString
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取用户设置失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;

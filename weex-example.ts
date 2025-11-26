@@ -1652,14 +1652,180 @@ async function testGetSinglePosition() {
 }
 
 /**
+ * 测试获取用户设置
+ */
+async function testGetUserSettings() {
+  console.log('\n=== 测试获取用户设置 ===\n');
+
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  if (!apiKey || !secretKey || !passphrase) {
+    console.error('❌ 请在 .env 文件中配置 API 密钥');
+    return;
+  }
+
+  // 合约 API 客户端
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase,
+    'https://pro-openapi.weex.tech'
+  );
+
+  try {
+    // 测试 1: 获取所有合约的用户设置
+    console.log('📊 测试 1: 获取所有合约的用户设置');
+    console.log('-----------------------------------\n');
+
+    const allSettings = await client.getUserSettings();
+
+    console.log('✅ 成功获取用户设置！');
+    console.log('原始响应:', JSON.stringify(allSettings, null, 2));
+    console.log('');
+
+    const symbols = Object.keys(allSettings);
+    console.log(`找到 ${symbols.length} 个交易对的设置\n`);
+
+    if (symbols.length === 0) {
+      console.log('⚠️  暂无用户设置');
+      console.log('');
+      console.log('💡 说明：');
+      console.log('   - 用户设置在首次交易或设置杠杆后才会生成');
+      console.log('   - 当前账户可能还未进行过合约交易');
+      console.log('   - 或者还未设置过任何交易对的杠杆');
+      console.log('');
+      console.log('📝 如何设置杠杆：');
+      console.log('   1. 登录 Weex 交易所网站');
+      console.log('   2. 进入合约交易页面');
+      console.log('   3. 选择交易对并设置杠杆倍数');
+      console.log('   4. 设置后即可通过此接口查询');
+      console.log('-----------------------------------\n');
+    } else if (symbols.length > 0) {
+      console.log('📋 所有交易对设置:');
+      console.log('-----------------------------------');
+
+      symbols.forEach((symbol, index) => {
+        const settings = allSettings[symbol];
+        console.log(`\n${index + 1}. ${symbol.toUpperCase()}`);
+        console.log('   逐仓多头杠杆:', settings.isolated_long_leverage + 'x');
+        console.log('   逐仓空头杠杆:', settings.isolated_short_leverage + 'x');
+        console.log('   全仓杠杆:', settings.cross_leverage + 'x');
+      });
+      console.log('-----------------------------------\n');
+
+      // 统计信息
+      const leverageStats = {
+        maxIsolatedLong: 0,
+        maxIsolatedShort: 0,
+        maxCross: 0,
+        avgIsolatedLong: 0,
+        avgIsolatedShort: 0,
+        avgCross: 0,
+      };
+
+      symbols.forEach(symbol => {
+        const settings = allSettings[symbol];
+        const isolatedLong = parseFloat(settings.isolated_long_leverage);
+        const isolatedShort = parseFloat(settings.isolated_short_leverage);
+        const cross = parseFloat(settings.cross_leverage);
+
+        leverageStats.maxIsolatedLong = Math.max(leverageStats.maxIsolatedLong, isolatedLong);
+        leverageStats.maxIsolatedShort = Math.max(leverageStats.maxIsolatedShort, isolatedShort);
+        leverageStats.maxCross = Math.max(leverageStats.maxCross, cross);
+        leverageStats.avgIsolatedLong += isolatedLong;
+        leverageStats.avgIsolatedShort += isolatedShort;
+        leverageStats.avgCross += cross;
+      });
+
+      leverageStats.avgIsolatedLong /= symbols.length;
+      leverageStats.avgIsolatedShort /= symbols.length;
+      leverageStats.avgCross /= symbols.length;
+
+      console.log('📊 杠杆统计:');
+      console.log('-----------------------------------');
+      console.log('最大逐仓多头杠杆:', leverageStats.maxIsolatedLong.toFixed(2) + 'x');
+      console.log('最大逐仓空头杠杆:', leverageStats.maxIsolatedShort.toFixed(2) + 'x');
+      console.log('最大全仓杠杆:', leverageStats.maxCross.toFixed(2) + 'x');
+      console.log('平均逐仓多头杠杆:', leverageStats.avgIsolatedLong.toFixed(2) + 'x');
+      console.log('平均逐仓空头杠杆:', leverageStats.avgIsolatedShort.toFixed(2) + 'x');
+      console.log('平均全仓杠杆:', leverageStats.avgCross.toFixed(2) + 'x');
+      console.log('-----------------------------------\n');
+    }
+
+    // 测试 2: 获取特定交易对的设置
+    console.log('📊 测试 2: 获取特定交易对的设置（BTC/USDT）');
+    console.log('-----------------------------------\n');
+
+    const btcSettings = await client.getUserSettings({ symbol: 'cmt_btcusdt' });
+
+    console.log('✅ BTC/USDT 设置:');
+    console.log('原始响应:', JSON.stringify(btcSettings, null, 2));
+    console.log('');
+
+    const btcSymbol = Object.keys(btcSettings)[0];
+
+    if (btcSymbol && btcSettings[btcSymbol]) {
+      const settings = btcSettings[btcSymbol];
+      console.log('📋 详细设置:');
+      console.log('-----------------------------------');
+      console.log('交易对:', btcSymbol.toUpperCase());
+      console.log('');
+      console.log('🔸 逐仓模式:');
+      console.log('  多头杠杆:', settings.isolated_long_leverage + 'x');
+      console.log('  空头杠杆:', settings.isolated_short_leverage + 'x');
+      console.log('');
+      console.log('🔹 全仓模式:');
+      console.log('  杠杆:', settings.cross_leverage + 'x');
+      console.log('-----------------------------------\n');
+
+      // 风险提示
+      const maxLeverage = Math.max(
+        parseFloat(settings.isolated_long_leverage),
+        parseFloat(settings.isolated_short_leverage),
+        parseFloat(settings.cross_leverage)
+      );
+
+      console.log('⚠️  风险提示:');
+      console.log('-----------------------------------');
+      if (maxLeverage >= 20) {
+        console.log('🔴 高杠杆风险：当前最大杠杆为', maxLeverage + 'x');
+        console.log('   - 高杠杆可能导致快速爆仓');
+        console.log('   - 建议谨慎使用，做好风险管理');
+      } else if (maxLeverage >= 10) {
+        console.log('🟡 中等杠杆风险：当前最大杠杆为', maxLeverage + 'x');
+        console.log('   - 注意市场波动');
+        console.log('   - 建议设置止损');
+      } else {
+        console.log('🟢 低杠杆风险：当前最大杠杆为', maxLeverage + 'x');
+        console.log('   - 相对安全的杠杆水平');
+      }
+      console.log('-----------------------------------');
+    } else {
+      console.log('⚠️  未找到 BTC/USDT 设置');
+      console.log('');
+      console.log('💡 提示：');
+      console.log('   - 该交易对可能还未设置杠杆');
+      console.log('   - 需要先在交易所设置杠杆后才能查询');
+    }
+
+    return allSettings;
+  } catch (error) {
+    console.error('❌ 获取用户设置失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试获取单个仓位信息
-    await testGetSinglePosition();
+    // 测试获取用户设置
+    await testGetUserSettings();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {
