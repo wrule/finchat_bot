@@ -1063,14 +1063,124 @@ async function testPlaceOrder() {
 }
 
 /**
+ * 测试获取现货账户资产（私有接口）
+ */
+async function testGetSpotAccountAssets() {
+  console.log('\n=== 测试获取现货账户资产 ===\n');
+
+  // 从环境变量读取 API 密钥
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  if (!apiKey || !secretKey || !passphrase) {
+    console.error('❌ 请在 .env 文件中配置 WEEX_API_KEY, WEEX_SECRET_KEY, WEEX_PASSPHRASE');
+    return;
+  }
+
+  // 使用默认的 base URL (https://api-spot.weex.com)
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase
+  );
+
+  try {
+    console.log('💰 正在获取现货账户资产信息...');
+    console.log('-----------------------------------');
+
+    const response = await client.getSpotAccountAssets();
+
+    console.log(`✅ 成功获取现货账户资产信息`);
+    console.log(`响应代码: ${response.code}`);
+    console.log(`响应消息: ${response.msg}`);
+    console.log(`请求时间: ${new Date(response.requestTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`);
+    console.log(`币种数量: ${response.data.length} 个\n`);
+
+    if (response.data.length > 0) {
+      // 计算总资产价值（以 USDT 计价）
+      let totalEquityUSDT = 0;
+      let totalAvailableUSDT = 0;
+      let totalFrozenUSDT = 0;
+
+      console.log('📊 资产详情:');
+      console.log('-----------------------------------');
+
+      response.data.forEach((asset, index) => {
+        const available = parseFloat(asset.available);
+        const frozen = parseFloat(asset.frozen);
+        const equity = parseFloat(asset.equity);
+
+        console.log(`\n${index + 1}. ${asset.coinName} (ID: ${asset.coinId})`);
+        console.log('   ├─ 可用资产:', available.toFixed(8));
+        console.log('   ├─ 冻结资产:', frozen.toFixed(8));
+        console.log('   └─ 总资产:', equity.toFixed(8));
+
+        // 如果是 USDT，累加到总计
+        if (asset.coinName === 'USDT') {
+          totalEquityUSDT += equity;
+          totalAvailableUSDT += available;
+          totalFrozenUSDT += frozen;
+        }
+      });
+
+      console.log('\n-----------------------------------');
+      console.log('💎 资产汇总 (USDT):');
+      console.log('-----------------------------------');
+      console.log('总资产:', totalEquityUSDT.toFixed(8), 'USDT');
+      console.log('可用资产:', totalAvailableUSDT.toFixed(8), 'USDT');
+      console.log('冻结资产:', totalFrozenUSDT.toFixed(8), 'USDT');
+
+      // 计算资产利用率
+      if (totalEquityUSDT > 0) {
+        const utilizationRate = (totalFrozenUSDT / totalEquityUSDT * 100);
+        console.log('冻结比例:', utilizationRate.toFixed(2) + '%');
+      }
+
+      console.log('-----------------------------------');
+
+      // 显示非零资产
+      const nonZeroAssets = response.data.filter(a => parseFloat(a.equity) > 0);
+      if (nonZeroAssets.length > 0) {
+        console.log('\n💼 持有币种:');
+        console.log('-----------------------------------');
+        nonZeroAssets.forEach(asset => {
+          const equity = parseFloat(asset.equity);
+          const available = parseFloat(asset.available);
+          const frozen = parseFloat(asset.frozen);
+
+          console.log(`${asset.coinName}:`);
+          console.log(`  总计: ${equity.toFixed(8)}`);
+          console.log(`  可用: ${available.toFixed(8)}`);
+          if (frozen > 0) {
+            console.log(`  冻结: ${frozen.toFixed(8)} ⚠️`);
+          }
+        });
+        console.log('-----------------------------------');
+      } else {
+        console.log('\n暂无持有币种');
+      }
+
+    } else {
+      console.log('暂无资产信息');
+    }
+
+    return response;
+  } catch (error) {
+    console.error('❌ 获取现货账户资产失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试下单接口（仅展示参数，不实际执行）
-    await testPlaceOrder();
+    // 测试获取现货账户资产
+    await testGetSpotAccountAssets();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {

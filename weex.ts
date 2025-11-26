@@ -351,9 +351,9 @@ export interface AccountListResponse {
 }
 
 /**
- * 账户资产信息
+ * 合约账户资产信息
  */
-export interface AccountAsset {
+export interface ContractAccountAsset {
   /** 币种 ID */
   coinId: number;
   /** 币种名称 */
@@ -366,6 +366,36 @@ export interface AccountAsset {
   equity: string;
   /** 未实现盈亏 */
   unrealizePnl: string;
+}
+
+/**
+ * 现货账户资产信息
+ */
+export interface SpotAccountAsset {
+  /** 币种 ID */
+  coinId: number;
+  /** 币种名称 */
+  coinName: string;
+  /** 可用资产 */
+  available: string;
+  /** 冻结资产 */
+  frozen: string;
+  /** 总资产 */
+  equity: string;
+}
+
+/**
+ * 现货资产响应
+ */
+export interface SpotAssetsResponse {
+  /** 响应代码 */
+  code: string;
+  /** 响应消息 */
+  msg: string;
+  /** 请求时间 */
+  requestTime: number;
+  /** 资产数据 */
+  data: SpotAccountAsset[];
 }
 
 /**
@@ -539,13 +569,13 @@ export class WeexApiClient {
    * @param apiKey - Your API Key
    * @param secretKey - Your Secret Key
    * @param accessPassphrase - Your Access Passphrase
-   * @param baseUrl - API base URL (e.g., https://api-contract.weex.com)
+   * @param baseUrl - API base URL (默认: https://api-spot.weex.com)
    */
   constructor(
     apiKey: string,
     secretKey: string,
     accessPassphrase: string,
-    baseUrl: string
+    baseUrl: string = 'https://api-spot.weex.com'
   ) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
@@ -863,18 +893,18 @@ export class WeexApiClient {
   }
 
   /**
-   * 获取账户资产（私有接口，需要签名）
+   * 获取合约账户资产（私有接口，需要签名）
    * GET /capi/v2/account/assets
    * Weight(IP): 2, Weight(UID): 2
    * 需要权限：合约交易读权限
-   * @returns 账户资产列表
+   * @returns 合约账户资产列表
    */
-  async getAccountAssets(): Promise<AccountAsset[]> {
+  async getContractAccountAssets(): Promise<ContractAccountAsset[]> {
     const requestPath = '/capi/v2/account/assets';
     const queryString = '';
 
     try {
-      const response = await this.sendRequestGet<AccountAsset[]>(
+      const response = await this.sendRequestGet<ContractAccountAsset[]>(
         requestPath,
         queryString
       );
@@ -882,7 +912,34 @@ export class WeexApiClient {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
-          `获取账户资产失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+          `获取合约账户资产失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 获取现货账户资产（私有接口，需要签名）
+   * GET /api/v2/account/assets
+   * Weight(IP): 5, Weight(UID): 5
+   * 需要权限：现货交易读权限
+   * @returns 现货账户资产列表
+   */
+  async getSpotAccountAssets(): Promise<SpotAssetsResponse> {
+    const requestPath = '/api/v2/account/assets';
+    const queryString = '';
+
+    try {
+      const response = await this.sendRequestGet<SpotAssetsResponse>(
+        requestPath,
+        queryString
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取现货账户资产失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;
