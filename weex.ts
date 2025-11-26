@@ -114,6 +114,243 @@ export interface GetCandlesParams {
 }
 
 /**
+ * 账户状态
+ */
+export type AccountStatus = 'UNKNOWN_ACCOUNT_STATUS' | 'NORMAL' | 'DISABLED';
+
+/**
+ * 保证金模式
+ */
+export type MarginMode = 'SHARED' | 'CROSS' | 'ISOLATED';
+
+/**
+ * 仓位方向
+ */
+export type PositionSide = 'LONG' | 'SHORT';
+
+/**
+ * 费用设置
+ */
+export interface FeeSetting {
+  /** 是否设置费率 */
+  is_set_fee_rate: boolean;
+  /** Taker 费率 */
+  taker_fee_rate: string;
+  /** Maker 费率 */
+  maker_fee_rate: string;
+  /** 是否启用费率折扣 */
+  is_set_fee_discount: boolean;
+  /** 费率折扣 */
+  fee_discount: string;
+  /** 是否对 Taker 和 Maker 应用单独的费率折扣 */
+  is_set_taker_maker_fee_discount: boolean;
+  /** Taker 费率折扣 */
+  taker_fee_discount: string;
+  /** Maker 费率折扣 */
+  maker_fee_discount: string;
+}
+
+/**
+ * 模式设置
+ */
+export interface ModeSetting {
+  /** 保证金模式 */
+  margin_mode: string;
+  /** 仓位隔离模式 */
+  separated_mode: string;
+  /** 仓位模式 */
+  position_mode: string;
+}
+
+/**
+ * 杠杆设置
+ */
+export interface LeverageSetting {
+  /** 逐仓多头杠杆 */
+  isolated_long_leverage: string;
+  /** 逐仓空头杠杆 */
+  isolated_short_leverage: string;
+  /** 全仓杠杆 */
+  cross_leverage: string;
+  /** 共享杠杆 */
+  shared_leverage: string;
+}
+
+/**
+ * 账户信息
+ */
+export interface AccountInfo {
+  /** 账户 ID */
+  id: string;
+  /** 关联用户 ID */
+  user_id: string;
+  /** 客户账户 ID */
+  client_account_id: string;
+  /** 是否为系统账户 */
+  is_system_account: boolean;
+  /** 默认费用配置 */
+  default_fee_setting: FeeSetting | null;
+  /** 合约 ID 到费用设置的映射 */
+  contract_id_to_fee_setting: Record<string, FeeSetting>;
+  /** 合约 ID 到模式设置的映射 */
+  contract_id_to_mode_setting: Record<string, ModeSetting>;
+  /** 合约 ID 到杠杆设置的映射 */
+  contract_id_to_leverage_setting: Record<string, LeverageSetting>;
+  /** 每分钟创建订单速率限制 */
+  create_order_rate_limit_per_minute: number;
+  /** 创建订单延迟（毫秒） */
+  create_order_delay_milliseconds: number;
+  /** 附加类型 */
+  extra_type: string;
+  /** 附加数据 */
+  extra_data_json: string;
+  /** 账户状态 */
+  status: AccountStatus;
+  /** 创建时间 */
+  created_time: string;
+  /** 更新时间 */
+  updated_time: string;
+}
+
+/**
+ * 抵押品信息
+ */
+export interface CollateralInfo {
+  /** 账户 ID */
+  account_id: string;
+  /** 币种 ID */
+  coin_id: number;
+  /** 保证金模式 */
+  margin_mode: MarginMode;
+  /** 全仓合约 ID */
+  cross_contract_id: number;
+  /** 逐仓仓位 ID */
+  isolated_position_id: string;
+  /** 抵押品数量 */
+  amount: string;
+  /** 待存入数量 */
+  pending_deposit_amount: string;
+  /** 待提取数量 */
+  pending_withdraw_amount: string;
+  /** 待转入数量 */
+  pending_transfer_in_amount: string;
+  /** 待转出数量 */
+  pending_transfer_out_amount: string;
+  /** 是否正在清算 */
+  is_liquidating: boolean;
+  /** 遗留余额 */
+  legacy_amount: string;
+  /** 累计存入数量 */
+  cum_deposit_amount: string;
+  /** 累计提取数量 */
+  cum_withdraw_amount: string;
+  /** 累计转入数量 */
+  cum_transfer_in_amount: string;
+  /** 累计转出数量 */
+  cum_transfer_out_amount: string;
+  /** 累计保证金转入数量 */
+  cum_margin_move_in_amount: string;
+  /** 累计保证金转出数量 */
+  cum_margin_move_out_amount: string;
+  /** 累计开多仓抵押品数量 */
+  cum_position_open_long_amount: string;
+  /** 累计开空仓抵押品数量 */
+  cum_position_open_short_amount: string;
+  /** 累计平多仓抵押品数量 */
+  cum_position_close_long_amount: string;
+  /** 累计平空仓抵押品数量 */
+  cum_position_close_short_amount: string;
+  /** 累计成交手续费 */
+  cum_position_fill_fee_amount: string;
+  /** 累计清算手续费 */
+  cum_position_liquidate_fee_amount: string;
+  /** 累计资金费用 */
+  cum_position_funding_amount: string;
+  /** 累计订单手续费收入 */
+  cum_order_fill_fee_income_amount: string;
+  /** 累计清算手续费收入 */
+  cum_order_liquidate_fee_income_amount: string;
+  /** 创建时间 */
+  created_time: string;
+  /** 更新时间 */
+  updated_time: string;
+}
+
+/**
+ * 仓位信息
+ */
+export interface PositionInfo {
+  /** 仓位 ID */
+  id: string;
+  /** 关联账户 ID */
+  account_id: string;
+  /** 关联抵押品币种 ID */
+  coin_id: number;
+  /** 关联合约 ID */
+  contract_id: number;
+  /** 仓位方向 */
+  side: PositionSide;
+  /** 当前仓位的保证金模式 */
+  margin_mode: MarginMode;
+  /** 当前仓位的隔离模式 */
+  separated_mode: string;
+  /** 隔离仓位的开仓订单 ID */
+  separated_open_order_id: string;
+  /** 仓位杠杆 */
+  leverage: string;
+  /** 当前仓位大小 */
+  size: string;
+  /** 开仓初始价值 */
+  open_value: string;
+  /** 开仓手续费 */
+  open_fee: string;
+  /** 资金费用 */
+  funding_fee: string;
+  /** 逐仓保证金 */
+  isolated_margin: string;
+  /** 是否启用逐仓保证金自动追加 */
+  is_auto_append_isolated_margin: boolean;
+  /** 累计开仓数量 */
+  cum_open_size: string;
+  /** 累计开仓价值 */
+  cum_open_value: string;
+  /** 累计开仓手续费 */
+  cum_open_fee: string;
+  /** 累计平仓数量 */
+  cum_close_size: string;
+  /** 累计平仓价值 */
+  cum_close_value: string;
+  /** 累计平仓手续费 */
+  cum_close_fee: string;
+  /** 累计已结算资金费用 */
+  cum_funding_fee: string;
+  /** 累计清算手续费 */
+  cum_liquidate_fee: string;
+  /** 创建时的撮合引擎序列 ID */
+  created_match_sequence_id: string;
+  /** 最后更新时的撮合引擎序列 ID */
+  updated_match_sequence_id: string;
+  /** 创建时间 */
+  created_time: string;
+  /** 更新时间 */
+  updated_time: string;
+}
+
+/**
+ * 账户列表响应
+ */
+export interface AccountListResponse {
+  /** 账户信息 */
+  account: AccountInfo;
+  /** 抵押品信息 */
+  collateral: CollateralInfo[];
+  /** 仓位信息 */
+  position: PositionInfo[];
+  /** 版本 */
+  version: string;
+}
+
+/**
  * Weex OpenAPI Client
  * Based on the official API documentation
  */
@@ -392,6 +629,33 @@ export class WeexApiClient {
       volume: candle[5],
       turnover: candle[6],
     }));
+  }
+
+  /**
+   * 获取账户列表（私有接口，需要签名）
+   * GET /capi/v2/account/accounts
+   * Weight(IP): 5, Weight(UID): 5
+   * 需要权限：合约交易读权限
+   * @returns 账户列表信息
+   */
+  async getAccounts(): Promise<AccountListResponse> {
+    const requestPath = '/capi/v2/account/accounts';
+    const queryString = '';
+
+    try {
+      const response = await this.sendRequestGet<AccountListResponse>(
+        requestPath,
+        queryString
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取账户列表失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
   }
 }
 
