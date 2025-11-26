@@ -911,6 +911,36 @@ export interface Trade {
 }
 
 /**
+ * 修改用户账户模式请求参数
+ */
+export interface ChangeHoldModelParams {
+  /** 交易对（必填） */
+  symbol: string;
+  /** 保证金模式（必填）
+   * 1: 全仓模式
+   * 3: 逐仓模式
+   */
+  marginMode: 1 | 3;
+  /** 持仓分离模式（必填）
+   * 1: 合并模式
+   * 2: 分离模式
+   */
+  separatedMode: 1 | 2;
+}
+
+/**
+ * 修改用户账户模式响应
+ */
+export interface ChangeHoldModelResponse {
+  /** 响应消息 */
+  msg: string;
+  /** 请求时间戳 */
+  requestTime: number;
+  /** 响应代码 */
+  code: string;
+}
+
+/**
  * 账户类型
  */
 export type AccountType = 'SPOT' | 'FUND';
@@ -1749,6 +1779,41 @@ export class WeexApiClient {
       if (axios.isAxiosError(error)) {
         throw new Error(
           `修改杠杆失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 修改用户账户模式（私有接口，需要签名）
+   * POST /capi/v2/account/position/changeHoldModel
+   * Weight(IP): 20, Weight(UID): 50
+   * 需要权限：合约交易权限
+   * @param params - 账户模式参数
+   * @returns 修改响应
+   */
+  async changeHoldModel(params: ChangeHoldModelParams): Promise<ChangeHoldModelResponse> {
+    const requestPath = '/capi/v2/account/position/changeHoldModel';
+
+    // 构建请求体
+    const bodyObj = {
+      symbol: params.symbol,
+      marginMode: params.marginMode,
+      separatedMode: params.separatedMode,
+    };
+
+    try {
+      const response = await this.sendRequestPost<ChangeHoldModelResponse>(
+        requestPath,
+        bodyObj,
+        ''
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `修改账户模式失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;

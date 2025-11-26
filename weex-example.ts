@@ -2859,14 +2859,138 @@ async function testGetTrades() {
 }
 
 /**
+ * 测试修改用户账户模式
+ */
+async function testChangeHoldModel() {
+  console.log('\n=== 测试修改用户账户模式 ===\n');
+
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  if (!apiKey || !secretKey || !passphrase) {
+    console.error('❌ 请在 .env 文件中配置 API 密钥');
+    return;
+  }
+
+  // 合约 API 客户端
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase,
+    'https://pro-openapi.weex.tech'
+  );
+
+  try {
+    // 测试 1: 修改为全仓 + 分离模式
+    console.log('📊 测试 1: 修改为全仓 + 分离模式');
+    console.log('-----------------------------------\n');
+
+    console.log('⚙️  账户模式参数:');
+    console.log('  交易对: cmt_btcusdt');
+    console.log('  保证金模式: 1 (全仓模式)');
+    console.log('  持仓分离模式: 2 (分离模式)');
+    console.log('');
+
+    const result1 = await client.changeHoldModel({
+      symbol: 'cmt_btcusdt',
+      marginMode: 1,      // 全仓模式
+      separatedMode: 2    // 分离模式
+    });
+
+    console.log('✅ 修改成功！');
+    console.log('响应代码:', result1.code);
+    console.log('响应消息:', result1.msg);
+    console.log('请求时间:', new Date(result1.requestTime).toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai'
+    }));
+    console.log('-----------------------------------\n');
+
+    // 等待一下
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // 测试 2: 修改为逐仓 + 合并模式
+    console.log('📊 测试 2: 修改为逐仓 + 合并模式');
+    console.log('-----------------------------------\n');
+
+    console.log('⚙️  账户模式参数:');
+    console.log('  交易对: cmt_btcusdt');
+    console.log('  保证金模式: 3 (逐仓模式)');
+    console.log('  持仓分离模式: 1 (合并模式)');
+    console.log('');
+
+    const result2 = await client.changeHoldModel({
+      symbol: 'cmt_btcusdt',
+      marginMode: 3,      // 逐仓模式
+      separatedMode: 1    // 合并模式
+    });
+
+    console.log('✅ 修改成功！');
+    console.log('响应代码:', result2.code);
+    console.log('响应消息:', result2.msg);
+    console.log('请求时间:', new Date(result2.requestTime).toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai'
+    }));
+    console.log('-----------------------------------\n');
+
+    console.log('💡 使用提示:');
+    console.log('-----------------------------------');
+    console.log('1. 保证金模式:');
+    console.log('   - 1: 全仓模式 (Cross Mode)');
+    console.log('     * 使用账户全部可用余额作为保证金');
+    console.log('     * 风险较高，但资金利用率高');
+    console.log('     * 适合有经验的交易者');
+    console.log('');
+    console.log('   - 3: 逐仓模式 (Isolated Mode)');
+    console.log('     * 只使用分配给该仓位的保证金');
+    console.log('     * 风险可控，最多损失该仓位保证金');
+    console.log('     * 适合风险管理严格的交易者');
+    console.log('');
+    console.log('2. 持仓分离模式:');
+    console.log('   - 1: 合并模式 (Combined Mode)');
+    console.log('     * 多空持仓合并计算');
+    console.log('     * 净持仓模式');
+    console.log('');
+    console.log('   - 2: 分离模式 (Separated Mode)');
+    console.log('     * 多空持仓分别计算');
+    console.log('     * 可以同时持有多空仓位');
+    console.log('     * 适合对冲策略');
+    console.log('');
+    console.log('3. 注意事项:');
+    console.log('   - 修改模式前需要平掉所有持仓');
+    console.log('   - 权重较高（IP:20, UID:50）');
+    console.log('   - 不同交易对可以设置不同模式');
+    console.log('');
+    console.log('4. AI 交易应用:');
+    console.log('   - 根据策略自动切换模式');
+    console.log('   - 高波动时使用逐仓降低风险');
+    console.log('   - 对冲策略使用分离模式');
+    console.log('   - 趋势策略使用全仓提高收益');
+    console.log('-----------------------------------');
+
+    return { result1, result2 };
+  } catch (error) {
+    console.error('❌ 修改账户模式失败:', error);
+
+    if (error instanceof Error && error.message.includes('40013')) {
+      console.log('\n⚠️  可能的原因:');
+      console.log('   - 账户有未平仓的持仓');
+      console.log('   - 需要先平掉所有持仓才能修改模式');
+    }
+
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试获取成交记录
-    await testGetTrades();
+    // 测试修改用户账户模式
+    await testChangeHoldModel();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {
