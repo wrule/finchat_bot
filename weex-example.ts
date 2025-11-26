@@ -1358,14 +1358,199 @@ async function testInternalWithdrawal() {
 }
 
 /**
+ * 测试获取成交记录
+ */
+async function testGetFills() {
+  console.log('\n=== 测试获取成交记录 ===\n');
+
+  const apiKey = process.env.WEEX_API_KEY || '';
+  const secretKey = process.env.WEEX_SECRET_KEY || '';
+  const passphrase = process.env.WEEX_PASSPHRASE || '';
+
+  if (!apiKey || !secretKey || !passphrase) {
+    console.error('❌ 请在 .env 文件中配置 API 密钥');
+    return;
+  }
+
+  // 合约 API 客户端
+  const client = new WeexApiClient(
+    apiKey,
+    secretKey,
+    passphrase,
+    'https://pro-openapi.weex.tech'
+  );
+
+  try {
+    console.log('📊 测试 1: 获取所有成交记录（最近 100 条）');
+    console.log('-----------------------------------\n');
+
+    const allFills = await client.getFills({
+      limit: 100
+    });
+
+    console.log('✅ 成功获取成交记录！');
+    console.log('原始响应:', JSON.stringify(allFills, null, 2));
+    console.log('');
+
+    // 处理空数组的情况
+    if (Array.isArray(allFills) && allFills.length === 0) {
+      console.log('⚠️  暂无成交记录（账户可能没有进行过交易）');
+      console.log('');
+      console.log('💡 提示：');
+      console.log('   - 成交记录只有在订单成交后才会产生');
+      console.log('   - 当前账户余额为 0，无法下单');
+      console.log('   - 需要先充值或划转资金到合约账户');
+      console.log('-----------------------------------\n');
+      return;
+    }
+
+    console.log('总条目数:', allFills.totals);
+    console.log('当前返回:', allFills.list?.length || 0, '条');
+    console.log('是否有更多页:', allFills.nextFlag ? '是' : '否');
+    console.log('');
+
+    if (allFills.list && allFills.list.length > 0) {
+      console.log('📋 最近的成交记录:');
+      console.log('-----------------------------------');
+
+      allFills.list.slice(0, 5).forEach((fill, index) => {
+        console.log(`\n${index + 1}. 成交 ID: ${fill.tradeId}`);
+        console.log('   订单 ID:', fill.orderId);
+        console.log('   交易对:', fill.symbol);
+        console.log('   方向:', fill.direction);
+        console.log('   订单方向:', fill.orderSide);
+        console.log('   仓位方向:', fill.positionSide);
+        console.log('   成交数量:', fill.fillSize);
+        console.log('   成交价值:', fill.fillValue);
+        console.log('   手续费:', fill.fillFee);
+        console.log('   已实现盈亏:', fill.realizePnl);
+        console.log('   保证金模式:', fill.marginMode);
+        console.log('   时间:', new Date(fill.createdTime).toLocaleString('zh-CN', {
+          timeZone: 'Asia/Shanghai'
+        }));
+      });
+
+      if (allFills.list.length > 5) {
+        console.log(`\n... 还有 ${allFills.list.length - 5} 条记录未显示`);
+      }
+    } else {
+      console.log('暂无成交记录');
+    }
+    console.log('-----------------------------------\n');
+
+    // 测试按交易对查询
+    console.log('📊 测试 2: 按交易对查询（BTC/USDT）');
+    console.log('-----------------------------------\n');
+
+    const btcFills = await client.getFills({
+      symbol: 'cmt_btcusdt',
+      limit: 50
+    });
+
+    console.log('✅ BTC/USDT 成交记录:');
+    console.log('总条目数:', btcFills.totals);
+    console.log('当前返回:', btcFills.list.length, '条');
+    console.log('');
+
+    if (btcFills.list.length > 0) {
+      // 统计信息
+      let totalFillSize = 0;
+      let totalFillValue = 0;
+      let totalFee = 0;
+      let totalPnl = 0;
+
+      btcFills.list.forEach(fill => {
+        totalFillSize += parseFloat(fill.fillSize);
+        totalFillValue += parseFloat(fill.fillValue);
+        totalFee += parseFloat(fill.fillFee);
+        totalPnl += parseFloat(fill.realizePnl);
+      });
+
+      console.log('📈 统计信息:');
+      console.log('-----------------------------------');
+      console.log('总成交数量:', totalFillSize.toFixed(8), 'BTC');
+      console.log('总成交价值:', totalFillValue.toFixed(2), 'USDT');
+      console.log('总手续费:', totalFee.toFixed(6), 'USDT');
+      console.log('总已实现盈亏:', totalPnl.toFixed(2), 'USDT');
+      console.log('平均成交价:', (totalFillValue / totalFillSize).toFixed(2), 'USDT');
+      console.log('-----------------------------------');
+    } else {
+      console.log('暂无 BTC/USDT 成交记录');
+    }
+    console.log('');
+
+    // 测试按时间范围查询
+    console.log('📊 测试 3: 按时间范围查询（最近 24 小时）');
+    console.log('-----------------------------------\n');
+
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+
+    const recentFills = await client.getFills({
+      startTime: oneDayAgo,
+      endTime: now,
+      limit: 100
+    });
+
+    console.log('✅ 最近 24 小时成交记录:');
+    console.log('总条目数:', recentFills.totals);
+    console.log('当前返回:', recentFills.list.length, '条');
+    console.log('');
+
+    if (recentFills.list.length > 0) {
+      // 按交易对分组统计
+      const symbolStats: { [key: string]: { count: number; volume: number; fee: number; pnl: number } } = {};
+
+      recentFills.list.forEach(fill => {
+        if (!symbolStats[fill.symbol]) {
+          symbolStats[fill.symbol] = { count: 0, volume: 0, fee: 0, pnl: 0 };
+        }
+        symbolStats[fill.symbol].count++;
+        symbolStats[fill.symbol].volume += parseFloat(fill.fillValue);
+        symbolStats[fill.symbol].fee += parseFloat(fill.fillFee);
+        symbolStats[fill.symbol].pnl += parseFloat(fill.realizePnl);
+      });
+
+      console.log('📊 按交易对统计:');
+      console.log('-----------------------------------');
+      Object.entries(symbolStats).forEach(([symbol, stats]) => {
+        console.log(`\n${symbol}:`);
+        console.log('  成交次数:', stats.count);
+        console.log('  成交额:', stats.volume.toFixed(2), 'USDT');
+        console.log('  手续费:', stats.fee.toFixed(6), 'USDT');
+        console.log('  已实现盈亏:', stats.pnl.toFixed(2), 'USDT');
+      });
+      console.log('-----------------------------------');
+    } else {
+      console.log('最近 24 小时暂无成交记录');
+    }
+    console.log('');
+
+    console.log('📄 完整响应示例（第一条记录）:');
+    console.log('-----------------------------------');
+    if (allFills.list.length > 0) {
+      console.log(JSON.stringify(allFills.list[0], null, 2));
+    } else {
+      console.log('暂无数据');
+    }
+    console.log('-----------------------------------');
+
+    return allFills;
+  } catch (error) {
+    console.error('❌ 获取成交记录失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 主测试函数
  */
 async function main() {
   try {
     console.log('🚀 开始测试 Weex API 客户端\n');
 
-    // 测试内部划转
-    await testInternalWithdrawal();
+    // 测试获取成交记录
+    await testGetFills();
 
     console.log('\n✅ 测试完成！');
   } catch (error) {

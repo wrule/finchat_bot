@@ -555,6 +555,96 @@ export interface PlaceOrderResponse {
 }
 
 /**
+ * 取消订单请求参数
+ */
+export interface CancelOrderParams {
+  /** 订单 ID（与 clientOid 二选一） */
+  orderId?: string;
+  /** 客户端自定义订单 ID（与 orderId 二选一） */
+  clientOid?: string;
+}
+
+/**
+ * 取消订单响应
+ */
+export interface CancelOrderResponse {
+  /** 订单 ID */
+  order_id: string;
+  /** 客户端订单 ID */
+  client_oid: string | null;
+  /** 取消状态 */
+  result: boolean;
+  /** 错误信息（如果取消失败） */
+  err_msg: string | null;
+}
+
+/**
+ * 获取成交记录请求参数
+ */
+export interface GetFillsParams {
+  /** 交易对名称（可选） */
+  symbol?: string;
+  /** 订单 ID（可选） */
+  orderId?: string;
+  /** 开始时间戳（可选） */
+  startTime?: number;
+  /** 结束时间戳（可选） */
+  endTime?: number;
+  /** 查询数量：最大 100，默认 100（可选） */
+  limit?: number;
+}
+
+/**
+ * 成交记录
+ */
+export interface Fill {
+  /** 成交订单 ID */
+  tradeId: number;
+  /** 关联订单 ID */
+  orderId: number;
+  /** 交易对名称 */
+  symbol: string;
+  /** 保证金模式 */
+  marginMode: string;
+  /** 分离模式 */
+  separatedMode: string;
+  /** 仓位方向 */
+  positionSide: string;
+  /** 订单方向 */
+  orderSide: string;
+  /** 实际成交数量 */
+  fillSize: string;
+  /** 实际成交价值 */
+  fillValue: string;
+  /** 实际交易手续费 */
+  fillFee: string;
+  /** 平仓手续费 */
+  liquidateFee: string;
+  /** 实际已实现盈亏 */
+  realizePnl: string;
+  /** 实际执行方向 */
+  direction: string;
+  /** 强平订单类型 */
+  liquidateType: string;
+  /** 兼容旧版订单方向类型 */
+  legacyOrdeDirection: string;
+  /** 时间戳 */
+  createdTime: number;
+}
+
+/**
+ * 获取成交记录响应
+ */
+export interface GetFillsResponse {
+  /** 成交记录列表 */
+  list: Fill[];
+  /** 是否有更多页 */
+  nextFlag: boolean;
+  /** 总条目数 */
+  totals: number;
+}
+
+/**
  * 账户类型
  */
 export type AccountType = 'SPOT' | 'FUND';
@@ -1063,6 +1153,99 @@ export class WeexApiClient {
       if (axios.isAxiosError(error)) {
         throw new Error(
           `下单失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 取消订单
+   * POST /capi/v2/order/cancel_order
+   * Weight(IP): 2, Weight(UID): 3
+   * 需要权限：合约交易权限
+   * @param params - 取消订单参数（orderId 或 clientOid 二选一）
+   * @returns 取消订单响应
+   */
+  async cancelOrder(params: CancelOrderParams): Promise<CancelOrderResponse> {
+    const requestPath = '/capi/v2/order/cancel_order';
+
+    // 验证参数：orderId 和 clientOid 至少要有一个
+    if (!params.orderId && !params.clientOid) {
+      throw new Error('Either orderId or clientOid is required');
+    }
+
+    // 构建请求体
+    const body: any = {};
+    if (params.orderId) {
+      body.orderId = params.orderId;
+    }
+    if (params.clientOid) {
+      body.clientOid = params.clientOid;
+    }
+
+    try {
+      const response = await this.sendRequestPost<CancelOrderResponse>(
+        requestPath,
+        body
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `取消订单失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 获取成交记录
+   * GET /capi/v2/order/fills
+   * Weight(IP): 5, Weight(UID): 5
+   * 需要权限：合约交易权限
+   * @param params - 查询参数（可选）
+   * @returns 成交记录响应
+   */
+  async getFills(params?: GetFillsParams): Promise<GetFillsResponse> {
+    const requestPath = '/capi/v2/order/fills';
+
+    // 构建查询参数对象
+    const queryParams: any = {};
+    if (params?.symbol) {
+      queryParams.symbol = params.symbol;
+    }
+    if (params?.orderId) {
+      queryParams.orderId = params.orderId;
+    }
+    if (params?.startTime) {
+      queryParams.startTime = params.startTime;
+    }
+    if (params?.endTime) {
+      queryParams.endTime = params.endTime;
+    }
+    if (params?.limit) {
+      queryParams.limit = params.limit;
+    }
+
+    // 将查询参数对象转换为查询字符串
+    const queryString = Object.keys(queryParams).length > 0
+      ? Object.entries(queryParams)
+          .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+          .join('&')
+      : '';
+
+    try {
+      const response = await this.sendRequestGet<GetFillsResponse>(
+        requestPath,
+        queryString
+      );
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `获取成交记录失败: ${error.response?.status} - ${JSON.stringify(error.response?.data)}`
         );
       }
       throw error;
