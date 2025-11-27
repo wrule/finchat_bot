@@ -1,3 +1,4 @@
+
 交易对: cmt_btcusdt
 
 最近交易记录:
@@ -542,3 +543,36 @@
 
 请基于以上指令和上方提供的市场数据，进行深度分析和思考，然后输出符合上述格式的纯 JSON 交易信号。
 
+
+
+---
+
+# 输出格式要求
+
+You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
+
+"JSON Schema" is a declarative language that allows you to annotate and validate JSON documents.
+
+For example, the example "JSON Schema" instance {{"properties": {{"foo": {{"description": "a list of test words", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}
+would match an object with one required property, "foo". The "type" property specifies "foo" must be an "array", and the "description" property semantically describes it as "a list of test words". The items within "foo" must be strings.
+Thus, the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of this example "JSON Schema". The object {{"properties": {{"foo": ["bar", "baz"]}}}} is not well-formatted.
+
+Your output will be parsed and type-checked according to the provided schema instance, so make sure all fields in your output match the schema exactly and there are no trailing commas!
+
+Here is the JSON Schema instance your output must adhere to. Include the enclosing markdown codeblock:
+```json
+{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"analysis":{"type":"object","properties":{"marketTrend":{"description":"市场趋势分析：分析当前 BTC 价格走势、K线形态、订单簿买卖力量对比。2-3句话。","type":"string"},"positionStatus":{"description":"持仓状态评估：分析当前多空仓位的盈亏情况、持仓成本、浮动盈亏百分比。2-3句话。","type":"string"},"riskAssessment":{"description":"风险评估：评估账户余额、保证金使用率、风险等级、是否有补仓或止损空间。1-2句话。","type":"string"}},"required":["marketTrend","positionStatus","riskAssessment"],"additionalProperties":false,"description":"市场分析：包含趋势、持仓、风险三个维度的分析"},"signal":{"type":"object","properties":{"action":{"description":"交易动作类型","type":"string","enum":["HOLD","OPEN_LONG","OPEN_SHORT","CLOSE_LONG","CLOSE_SHORT","ADD_LONG","ADD_SHORT"]},"confidence":{"description":"信号置信度：HIGH-强烈建议, MEDIUM-中等建议, LOW-弱建议","type":"string","enum":["HIGH","MEDIUM","LOW"]},"reasoning":{"description":"操作理由：详细说明为什么做出这个决策，基于哪些市场数据和策略原则。2-3句话。","type":"string"}},"required":["action","confidence","reasoning"],"additionalProperties":false,"description":"交易信号：包含操作类型、置信度、理由"},"execution":{"type":"object","properties":{"hasOrder":{"description":"是否有具体订单需要执行：true-需要执行订单, false-仅观望","type":"boolean"},"orders":{"type":"array","items":{"type":"object","properties":{"type":{"description":"订单类型：1-开多, 2-开空, 3-平多, 4-平空","type":"string","enum":["1","2","3","4"]},"typeDescription":{"description":"类型描述：例如 \"1-开多\", \"3-平多\"","type":"string"},"size":{"description":"订单数量：BTC 数量，字符串格式，例如 \"0.0050\"","type":"string"},"priceType":{"description":"价格类型：MARKET-市价单（立即成交）, LIMIT-限价单（指定价格）","type":"string","enum":["MARKET","LIMIT"]},"price":{"description":"订单价格：USDT 价格，字符串格式。市价单填当前价格，限价单填目标价格。","type":"string"},"reasoning":{"description":"此订单的具体理由：说明为什么在这个价格、这个数量下单。1-2句话。","type":"string"}},"required":["type","typeDescription","size","priceType","price","reasoning"],"additionalProperties":false},"description":"订单数组：可以包含多个订单，如果 hasOrder 为 false 则为空数组"}},"required":["hasOrder","orders"],"additionalProperties":false,"description":"执行细节：包含是否有订单、订单列表"},"riskWarning":{"description":"风险提示：提醒用户注意的风险点或操作建议。1句话。","type":"string"}},"required":["analysis","signal","execution","riskWarning"],"additionalProperties":false}
+```
+
+
+---
+
+# 重要提示
+
+1. **严格遵守上述 JSON 格式**：你的输出必须是有效的 JSON，可以被 JSON.parse() 直接解析
+2. **不要包含 markdown 标记**：不要使用 ```json 或 ``` 包裹你的输出
+3. **所有字段都必须填写**：不要遗漏任何必填字段
+4. **枚举值必须精确匹配**：action 必须是 HOLD/OPEN_LONG/OPEN_SHORT/CLOSE_LONG/CLOSE_SHORT/ADD_LONG/ADD_SHORT 之一
+5. **数字字段使用字符串**：size 和 price 字段必须是字符串格式，例如 "0.0050" 和 "91000.0"
+
+请基于上述市场数据，进行深度分析并生成交易信号。

@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { WeexApiClient } from './weex';
-import { AITradingSignal, validateAITradingSignal } from './ai-trading-signal';
+import { generateAITradingSignal, validateAITradingSignal, formatTradingSignal } from './ai-signal-generator';
+import type { AITradingSignal } from './ai-trading-schema';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -97,105 +98,19 @@ async function saveToFolder(folderPath: string, filename: string, content: strin
 }
 
 /**
- * 鲁棒的 JSON 解析函数
- * 尝试多种方式解析 AI 返回的内容
+ * 调用 AI 生成交易信号（使用 Vercel AI SDK）
+ * @returns 返回 AI 交易信号对象
  */
-function robustJsonParse(text: string): any {
-  // 1. 尝试直接解析
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    // 继续尝试其他方法
+async function generateTradingSignal(marketReport: string): Promise<AITradingSignal> {
+  // 使用新的 AI 信号生成器（基于 Zod Schema + Vercel AI SDK）
+  const signal = await generateAITradingSignal(marketReport);
+
+  // 验证信号
+  if (!validateAITradingSignal(signal)) {
+    throw new Error('AI 返回的交易信号格式无效');
   }
 
-  // 2. 移除 markdown 代码块标记
-  let cleaned = text.trim();
-  if (cleaned.startsWith('```json')) {
-    cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
-  }
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // 继续尝试其他方法
-  }
-
-  // 3. 尝试提取 JSON 对象（查找第一个 { 到最后一个 }）
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      // 继续尝试其他方法
-    }
-  }
-
-  // 4. 尝试移除注释
-  cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, ''); // 移除 /* */ 注释
-  cleaned = cleaned.replace(/\/\/.*/g, ''); // 移除 // 注释
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // 所有方法都失败
-    throw new Error(`无法解析 JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * 调用 AI 生成交易信号
- * @returns 返回 { signal: 解析后的信号, rawResponse: 原始响应 }
- */
-async function generateTradingSignal(marketReport: string): Promise<{ signal: AITradingSignal; rawResponse: string }> {
-  console.log('\n🤖 正在调用 AI 分析市场数据...');
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek/deepseek-r1',
-        messages: [
-          {
-            role: 'user',
-            content: marketReport
-          }
-        ],
-        temperature: 0.7,
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`AI API 请求失败: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-
-    console.log('✅ AI 响应接收成功');
-
-    // 使用鲁棒的 JSON 解析
-    const parsedJson = robustJsonParse(aiResponse);
-
-    // 验证信号
-    if (!validateAITradingSignal(parsedJson)) {
-      throw new Error('AI 返回的交易信号格式无效');
-    }
-
-    return {
-      signal: parsedJson as AITradingSignal,
-      rawResponse: aiResponse
-    };
-
-  } catch (error) {
-    console.error('❌ AI 调用失败:', error);
-    throw error;
-  }
+  return signal;
 }
 
 /**
@@ -404,15 +319,9 @@ async function runTradingCycle(dryRun: boolean = false): Promise<void> {
 
     // 3. 调用 AI 生成交易信号
     let signal: AITradingSignal | null = null;
-    let aiRawResponse = '';
 
     try {
-      const result = await generateTradingSignal(marketReport);
-      signal = result.signal;
-      aiRawResponse = result.rawResponse;
-
-      // 保存原始 AI 响应
-      await saveToFolder(folderPath, '2-ai-raw-response.txt', aiRawResponse);
+      signal = await generateTradingSignal(marketReport);
 
       // 保存解析后的 JSON
       await saveToFolder(folderPath, '2-ai-signal.json', JSON.stringify(signal, null, 2));

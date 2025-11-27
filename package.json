@@ -13,6 +13,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.0",
     "@openrouter/ai-sdk-provider": "^1.2.5",
     "@types/crypto-js": "^4.2.2",
     "ai": "^5.0.101",
