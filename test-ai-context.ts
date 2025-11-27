@@ -25,9 +25,9 @@ async function testAIContext() {
     console.log('元数据:', JSON.stringify(context.metadata, null, 2));
     console.log('\n交易历史摘要:', JSON.stringify(context.tradingHistory.summary, null, 2));
     console.log('\n市场数据 - 当前价格:', context.marketData.currentPrice);
-    console.log('市场数据 - 15分钟K线:', {
-      latestPrice: context.marketData.klines['15m'].latestPrice,
-      priceChange24h: context.marketData.klines['15m'].priceChangePercent24h
+    console.log('市场数据 - 5分钟K线:', {
+      latestPrice: context.marketData.klines['5m'].latestPrice,
+      priceChange24h: context.marketData.klines['5m'].priceChangePercent24h
     });
     console.log('\n账户风险:', JSON.stringify(context.accountRisk.risk, null, 2));
     console.log('\n当前持仓:', context.currentPosition.hasPosition ? 

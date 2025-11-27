@@ -2307,16 +2307,16 @@ export class WeexApiClient {
    * AI 专用：获取完整市场数据（汇总版）
    * 包含多个时间周期的K线数据和订单簿数据
    * @param symbol - 交易对，例如 'cmt_btcusdt'
+   * @param klineLimit - K线数据数量，默认 50
    */
-  async getMarketDataForAI(symbol: string) {
+  async getMarketDataForAI(symbol: string, klineLimit: number = 50) {
     console.log(`正在获取 ${symbol} 的市场数据...`);
 
     // 并行获取所有数据
-    const [kline15m, kline1h, kline4h, orderBook] = await Promise.all([
-      this.getKlineForAI(symbol, '15m', 100),
-      this.getKlineForAI(symbol, '1h', 100),
-      this.getKlineForAI(symbol, '4h', 100),
-      this.getOrderBookForAI(symbol, 10)
+    const [kline5m, kline1h, orderBook] = await Promise.all([
+      this.getKlineForAI(symbol, '5m', klineLimit),
+      this.getKlineForAI(symbol, '1h', klineLimit),
+      this.getOrderBookForAI(symbol, 20)  // 增加深度到20档
     ]);
 
     console.log(`✅ 市场数据获取完成`);
@@ -2326,9 +2326,8 @@ export class WeexApiClient {
       timestamp: new Date().toISOString(),
       currentPrice: orderBook.bestBid,  // 使用最优买价作为当前价格
       klines: {
-        '15m': kline15m,
-        '1h': kline1h,
-        '4h': kline4h
+        '5m': kline5m,
+        '1h': kline1h
       },
       orderBook
     };
@@ -2597,13 +2596,15 @@ export class WeexApiClient {
    * 整合账单历史、市场数据、账户风险和持仓信息
    * 这是为 AI 决策提供的完整上下文数据
    * @param symbol - 交易对，例如 'cmt_btcusdt'
-   * @param billsLimit - 账单历史记录数量，默认 50
+   * @param billsLimit - 账单历史记录数量，默认 10
+   * @param klineLimit - K线数据数量，默认 50
    * @param saveToFile - 是否保存到文件，默认 true
    * @param filePath - 保存的文件路径，默认 'ai-trading-context.json'
    */
   async getAITradingContext(
     symbol: string,
-    billsLimit: number = 50,
+    billsLimit: number = 10,
+    klineLimit: number = 50,
     saveToFile: boolean = true,
     filePath: string = 'ai-trading-context.json'
   ) {
@@ -2617,7 +2618,7 @@ export class WeexApiClient {
     const billsPromise = this.getBillsForAI(symbol, billsLimit);
 
     console.log('📈 2/4 获取市场数据...');
-    const marketDataPromise = this.getMarketDataForAI(symbol);
+    const marketDataPromise = this.getMarketDataForAI(symbol, klineLimit);
 
     console.log('⚠️  3/4 获取账户风险信息...');
     const riskPromise = this.getAccountRiskForAI(symbol);
@@ -2682,43 +2683,44 @@ export class WeexApiClient {
    * AI 专用：获取格式化的交易上下文文本
    * 将完整的交易上下文转换为易读的文本格式，适合直接传递给 AI
    * @param symbol - 交易对，例如 'cmt_btcusdt'
-   * @param billsLimit - 账单历史记录数量，默认 50
+   * @param billsLimit - 账单历史记录数量，默认 10
+   * @param klineLimit - K线数据数量，默认 50
    * @param saveToFile - 是否保存到文件，默认 true
    * @param filePath - 保存的文件路径，默认 'ai-trading-context.txt'
    */
   async getAITradingContextText(
     symbol: string,
-    billsLimit: number = 50,
+    billsLimit: number = 10,
+    klineLimit: number = 50,
     saveToFile: boolean = true,
     filePath: string = 'ai-trading-context.txt'
   ): Promise<string> {
-    const context = await this.getAITradingContext(symbol, billsLimit, false); // 不保存JSON，只保存文本
+    const context = await this.getAITradingContext(symbol, billsLimit, klineLimit, false); // 不保存JSON，只保存文本
 
     // 构建格式化的文本报告
     const lines: string[] = [];
 
     lines.push('='.repeat(80));
     lines.push(`AI 交易上下文报告 - ${context.metadata.symbol}`);
-    lines.push(`生成时间: ${context.metadata.timestamp}`);
-    lines.push(`数据获取耗时: ${context.metadata.dataFetchDuration}`);
     lines.push('='.repeat(80));
     lines.push('');
 
-    // 1. 交易历史摘要
-    lines.push('📊 一、交易历史摘要');
+    // 1. 交易历史
+    lines.push('📊 一、最近交易记录');
     lines.push('-'.repeat(80));
-    lines.push(`总记录数: ${context.tradingHistory.totalRecords}`);
-    lines.push('');
-    lines.push('盈亏统计:');
-    lines.push(`  总收入: ${context.tradingHistory.summary.totalIncome} USDT`);
-    lines.push(`  总支出: ${context.tradingHistory.summary.totalExpense} USDT`);
-    lines.push(`  净盈亏: ${context.tradingHistory.summary.netPnL} USDT`);
-    lines.push(`  总手续费: ${context.tradingHistory.summary.totalFees} USDT`);
-    lines.push('');
-    lines.push('交易统计:');
-    lines.push(`  开仓次数: ${context.tradingHistory.summary.openPositions}`);
-    lines.push(`  平仓次数: ${context.tradingHistory.summary.closePositions}`);
-    lines.push(`  资金费用次数: ${context.tradingHistory.summary.fundingFees}`);
+
+    // 显示最近的交易记录（只显示前10条）
+    const tradesToShow = context.tradingHistory.recentTrades.slice(0, 10);
+    tradesToShow.forEach((trade: any, index: number) => {
+      lines.push(`交易 ${index + 1}:`);
+      lines.push(`  时间: ${trade.time}`);
+      lines.push(`  类型: ${trade.type}`);
+      lines.push(`  金额: ${trade.amount} USDT`);
+      if (trade.fee && parseFloat(trade.fee) > 0) {
+        lines.push(`  手续费: ${trade.fee} USDT`);
+      }
+      lines.push('');
+    });
     lines.push('');
 
     // 2. 市场数据
@@ -2727,23 +2729,48 @@ export class WeexApiClient {
     lines.push(`当前价格: ${context.marketData.currentPrice} USDT`);
     lines.push('');
 
-    // K线数据摘要
-    lines.push('K线数据:');
-    const kline15m = context.marketData.klines['15m'];
+    // K线数据 - 按时间周期从大到小排序：1h → 5m
     const kline1h = context.marketData.klines['1h'];
-    const kline4h = context.marketData.klines['4h'];
+    const kline5m = context.marketData.klines['5m'];
 
-    lines.push(`  15分钟: 最新价 ${kline15m.latestPrice}, 24h涨跌 ${kline15m.priceChangePercent24h}%`);
-    lines.push(`  1小时:  最新价 ${kline1h.latestPrice}, 24h涨跌 ${kline1h.priceChangePercent24h}%`);
-    lines.push(`  4小时:  最新价 ${kline4h.latestPrice}, 24h涨跌 ${kline4h.priceChangePercent24h}%`);
+    // 1小时K线
+    lines.push('1小时K线数据:');
+    lines.push(`  最新价: ${kline1h.latestPrice}, 24h涨跌: ${kline1h.priceChangePercent24h}%`);
+    lines.push('  K线详情:');
+    kline1h.candles.forEach((k: any, index: number) => {
+      lines.push(`    ${index + 1}. 时间:${k.time} 开:${k.open} 高:${k.high} 低:${k.low} 收:${k.close} 量:${k.volume}`);
+    });
+    lines.push('');
+
+    // 5分钟K线
+    lines.push('5分钟K线数据:');
+    lines.push(`  最新价: ${kline5m.latestPrice}, 24h涨跌: ${kline5m.priceChangePercent24h}%`);
+    lines.push('  K线详情:');
+    kline5m.candles.forEach((k: any, index: number) => {
+      lines.push(`    ${index + 1}. 时间:${k.time} 开:${k.open} 高:${k.high} 低:${k.low} 收:${k.close} 量:${k.volume}`);
+    });
     lines.push('');
 
     // 订单簿数据
-    lines.push('订单簿:');
+    lines.push('订单簿深度:');
     lines.push(`  最优买价: ${context.marketData.orderBook.bestBid} USDT`);
     lines.push(`  最优卖价: ${context.marketData.orderBook.bestAsk} USDT`);
     lines.push(`  价差: ${context.marketData.orderBook.spread} USDT (${context.marketData.orderBook.spreadPercent}%)`);
     lines.push(`  买卖比: ${context.marketData.orderBook.bidAskRatio}`);
+    lines.push('');
+
+    // 显示买盘深度
+    lines.push('  买盘深度:');
+    context.marketData.orderBook.bidDepth.forEach((bid: any, index: number) => {
+      lines.push(`    ${index + 1}. 价格:${bid.price} 数量:${bid.amount} 累计:${bid.total}`);
+    });
+    lines.push('');
+
+    // 显示卖盘深度
+    lines.push('  卖盘深度:');
+    context.marketData.orderBook.askDepth.forEach((ask: any, index: number) => {
+      lines.push(`    ${index + 1}. 价格:${ask.price} 数量:${ask.amount} 累计:${ask.total}`);
+    });
     lines.push('');
 
     // 3. 账户风险
@@ -2789,13 +2816,6 @@ export class WeexApiClient {
         lines.push(`  未实现盈亏: ${pos.unrealizedPnl} USDT (${pos.pnlPercent}%)`);
         lines.push('');
       });
-
-      if (context.currentPosition.netPosition) {
-        lines.push('净持仓:');
-        lines.push(`  方向: ${context.currentPosition.netPosition.side}`);
-        lines.push(`  数量: ${context.currentPosition.netPosition.size}`);
-        lines.push('');
-      }
 
       if (context.currentPosition.totalPnl) {
         lines.push(`总盈亏: ${context.currentPosition.totalPnl} USDT`);
