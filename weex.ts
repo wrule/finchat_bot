@@ -2827,11 +2827,27 @@ export class WeexApiClient {
       lines.push('持仓状态: 无持仓');
     }
 
+    // 读取并拼接 AI 交易分析 prompt
+    const fs = await import('fs/promises');
+    const path = await import('path');
+
+    try {
+      const promptPath = path.join(process.cwd(), 'ai-trading-prompt.md');
+      const promptContent = await fs.readFile(promptPath, 'utf-8');
+
+      // 在报告末尾添加分隔和 prompt
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+      lines.push(promptContent);
+    } catch (error) {
+      console.warn('⚠️  未找到 ai-trading-prompt.md 文件，跳过 prompt 拼接');
+    }
+
     const textReport = lines.join('\n');
 
     // 保存到文件
     if (saveToFile) {
-      const fs = await import('fs/promises');
       await fs.writeFile(filePath, textReport, 'utf-8');
       console.log(`💾 文本报告已保存到: ${filePath}`);
     }
