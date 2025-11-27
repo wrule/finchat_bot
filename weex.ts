@@ -2333,6 +2333,138 @@ export class WeexApiClient {
       orderBook
     };
   }
+
+  /**
+   * AI 专用：获取账单历史（精简版）
+   * 只返回 AI 策略分析所需的关键字段
+   * @param symbol - 交易对，例如 'cmt_btcusdt'
+   * @param limit - 返回数量，默认 50
+   */
+  async getBillsForAI(
+    symbol: string,
+    limit: number = 50
+  ): Promise<{
+    symbol: string;
+    totalRecords: number;
+    summary: {
+      totalIncome: string;
+      totalExpense: string;
+      netPnL: string;
+      totalFees: string;
+      openPositions: number;
+      closePositions: number;
+      fundingFees: number;
+    };
+    recentTrades: Array<{
+      time: string;
+      type: string;
+      amount: string;
+      balance: string;
+      fee: string;
+    }>;
+    typeBreakdown: Record<string, {
+      count: number;
+      totalAmount: string;
+    }>;
+  }> {
+    const bills = await this.getAccountBills({
+      symbol,
+      limit
+    });
+
+    if (!bills.items || bills.items.length === 0) {
+      return {
+        symbol,
+        totalRecords: 0,
+        summary: {
+          totalIncome: '0',
+          totalExpense: '0',
+          netPnL: '0',
+          totalFees: '0',
+          openPositions: 0,
+          closePositions: 0,
+          fundingFees: 0
+        },
+        recentTrades: [],
+        typeBreakdown: {}
+      };
+    }
+
+    // 计算汇总数据
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let totalFees = 0;
+    let openPositions = 0;
+    let closePositions = 0;
+    let fundingFees = 0;
+
+    const typeBreakdown: Record<string, { count: number; totalAmount: number }> = {};
+
+    bills.items.forEach(bill => {
+      const amount = parseFloat(bill.amount);
+      const fee = parseFloat(bill.fillFee || '0');
+
+      // 统计收入和支出
+      if (amount > 0) {
+        totalIncome += amount;
+      } else {
+        totalExpense += Math.abs(amount);
+      }
+
+      // 统计手续费
+      totalFees += fee;
+
+      // 统计业务类型
+      if (!typeBreakdown[bill.businessType]) {
+        typeBreakdown[bill.businessType] = { count: 0, totalAmount: 0 };
+      }
+      typeBreakdown[bill.businessType].count++;
+      typeBreakdown[bill.businessType].totalAmount += amount;
+
+      // 统计开平仓次数
+      if (bill.businessType.includes('open')) {
+        openPositions++;
+      } else if (bill.businessType.includes('close')) {
+        closePositions++;
+      } else if (bill.businessType.includes('funding')) {
+        fundingFees++;
+      }
+    });
+
+    // 转换为精简格式
+    const recentTrades = bills.items.slice(0, 20).map(bill => ({
+      time: new Date(bill.ctime).toISOString(),
+      type: bill.businessType,
+      amount: bill.amount,
+      balance: bill.balance,
+      fee: bill.fillFee || '0'
+    }));
+
+    // 转换类型统计
+    const typeBreakdownFormatted: Record<string, { count: number; totalAmount: string }> = {};
+    Object.entries(typeBreakdown).forEach(([type, data]) => {
+      typeBreakdownFormatted[type] = {
+        count: data.count,
+        totalAmount: data.totalAmount.toFixed(8)
+      };
+    });
+
+    return {
+      symbol,
+      totalRecords: bills.items.length,
+      summary: {
+        totalIncome: totalIncome.toFixed(8),
+        totalExpense: totalExpense.toFixed(8),
+        netPnL: (totalIncome - totalExpense).toFixed(8),
+        totalFees: totalFees.toFixed(8),
+        openPositions,
+        closePositions,
+        fundingFees
+      },
+      recentTrades,
+      typeBreakdown: typeBreakdownFormatted
+    };
+  }
 }
 
 /**
