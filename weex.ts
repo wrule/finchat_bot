@@ -2490,8 +2490,6 @@ export class WeexApiClient {
     };
     risk: {
       level: string;
-      positionValue: string;
-      accountValue: string;
       leverageRatio: string;
       marginRatio: string;
     };
@@ -2583,8 +2581,6 @@ export class WeexApiClient {
       },
       risk: {
         level: riskLevel,
-        positionValue: totalPositionValue.toFixed(2),
-        accountValue: accountValue.toFixed(2),
         leverageRatio: leverageRatio,
         marginRatio: marginRatio
       },

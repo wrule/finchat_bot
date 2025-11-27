@@ -60,8 +60,6 @@ Margin Status:
 
 Risk Assessment:
 - Risk Level: ${riskInfo.risk.level} ${riskEmoji}
-- Position Value: ${riskInfo.risk.positionValue} USDT
-- Account Value: ${riskInfo.risk.accountValue} USDT
 - Actual Leverage Ratio: ${riskInfo.risk.leverageRatio}x
 - Margin Usage Ratio: ${riskInfo.risk.marginRatio}%
 
@@ -80,7 +78,6 @@ Positions:
 
   const marginRatio = parseFloat(riskInfo.risk.marginRatio);
   const leverageRatio = parseFloat(riskInfo.risk.leverageRatio);
-  const positionValue = parseFloat(riskInfo.risk.positionValue);
 
   console.log('风险等级:', riskInfo.risk.level, riskEmoji);
   console.log('');
@@ -119,8 +116,9 @@ Positions:
   console.log(`  持仓数量: ${riskInfo.positions.count}`);
   console.log(`  持仓价值: ${riskInfo.positions.totalValue} USDT`);
   console.log(`  未实现盈亏: ${riskInfo.positions.totalUnrealizedPnl} USDT`);
-  const pnlRatio = positionValue > 0 
-    ? ((parseFloat(riskInfo.positions.totalUnrealizedPnl) / positionValue) * 100).toFixed(2)
+  const totalValue = parseFloat(riskInfo.positions.totalValue);
+  const pnlRatio = totalValue > 0
+    ? ((parseFloat(riskInfo.positions.totalUnrealizedPnl) / totalValue) * 100).toFixed(2)
     : '0.00';
   console.log(`  盈亏比例: ${pnlRatio}%`);
 
