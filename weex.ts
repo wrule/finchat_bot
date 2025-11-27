@@ -2465,6 +2465,136 @@ export class WeexApiClient {
       typeBreakdown: typeBreakdownFormatted
     };
   }
+
+  /**
+   * AI 专用：获取账户风险信息（精简版）
+   * 包含杠杆率、保证金比率、风险水平等关键指标
+   * @param symbol - 交易对，例如 'cmt_btcusdt'
+   */
+  async getAccountRiskForAI(symbol: string): Promise<{
+    symbol: string;
+    timestamp: string;
+    balance: {
+      total: string;
+      available: string;
+      frozen: string;
+    };
+    leverage: {
+      current: string;
+      mode: string;
+    };
+    margin: {
+      used: string;
+      available: string;
+      ratio: string;
+    };
+    risk: {
+      level: string;
+      positionValue: string;
+      accountValue: string;
+      leverageRatio: string;
+      marginRatio: string;
+    };
+    positions: {
+      count: number;
+      totalValue: string;
+      totalUnrealizedPnl: string;
+    };
+  }> {
+    // 并行获取账户资产和持仓信息
+    const [assets, positions] = await Promise.all([
+      this.getContractAccountAssets(),
+      this.getSinglePosition({ symbol })
+    ]);
+
+    // 获取 USDT 资产
+    const usdtAsset = assets.find(asset => asset.coinName === 'USDT');
+    if (!usdtAsset) {
+      throw new Error('未找到 USDT 资产');
+    }
+
+    const totalBalance = parseFloat(usdtAsset.available) + parseFloat(usdtAsset.frozen);
+    const available = parseFloat(usdtAsset.available);
+    const frozen = parseFloat(usdtAsset.frozen);
+
+    // 计算持仓信息
+    let totalPositionValue = 0;
+    let totalUnrealizedPnl = 0;
+    let currentLeverage = '0';
+    let marginMode = 'SHARED';
+
+    if (positions && positions.length > 0) {
+      positions.forEach(pos => {
+        totalPositionValue += parseFloat(pos.open_value);
+        totalUnrealizedPnl += parseFloat(pos.unrealizePnl);
+      });
+
+      // 使用第一个持仓的杠杆和模式
+      currentLeverage = positions[0].leverage;
+      marginMode = positions[0].margin_mode;
+    }
+
+    // 计算保证金使用情况
+    const usedMargin = frozen;  // 冻结资产即为已使用保证金
+    const availableMargin = available;
+
+    // 计算保证金比率 (已使用保证金 / 总余额)
+    const marginRatio = totalBalance > 0
+      ? ((usedMargin / totalBalance) * 100).toFixed(2)
+      : '0.00';
+
+    // 计算账户价值 (总余额 + 未实现盈亏)
+    const accountValue = totalBalance + totalUnrealizedPnl;
+
+    // 计算实际杠杆率 (持仓价值 / 账户价值)
+    const leverageRatio = accountValue > 0
+      ? (totalPositionValue / accountValue).toFixed(2)
+      : '0.00';
+
+    // 计算风险等级
+    let riskLevel = 'LOW';
+    const marginRatioNum = parseFloat(marginRatio);
+    const leverageRatioNum = parseFloat(leverageRatio);
+
+    if (marginRatioNum > 80 || leverageRatioNum > 15) {
+      riskLevel = 'CRITICAL';
+    } else if (marginRatioNum > 60 || leverageRatioNum > 10) {
+      riskLevel = 'HIGH';
+    } else if (marginRatioNum > 40 || leverageRatioNum > 5) {
+      riskLevel = 'MEDIUM';
+    }
+
+    return {
+      symbol,
+      timestamp: new Date().toISOString(),
+      balance: {
+        total: totalBalance.toFixed(2),
+        available: available.toFixed(2),
+        frozen: frozen.toFixed(2)
+      },
+      leverage: {
+        current: currentLeverage,
+        mode: marginMode
+      },
+      margin: {
+        used: usedMargin.toFixed(2),
+        available: availableMargin.toFixed(2),
+        ratio: marginRatio
+      },
+      risk: {
+        level: riskLevel,
+        positionValue: totalPositionValue.toFixed(2),
+        accountValue: accountValue.toFixed(2),
+        leverageRatio: leverageRatio,
+        marginRatio: marginRatio
+      },
+      positions: {
+        count: positions ? positions.length : 0,
+        totalValue: totalPositionValue.toFixed(2),
+        totalUnrealizedPnl: totalUnrealizedPnl.toFixed(2)
+      }
+    };
+  }
 }
 
 /**
