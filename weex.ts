@@ -2060,6 +2060,73 @@ export class WeexApiClient {
 
     return null;
   }
+
+  /**
+   * AI 专用：获取当前持仓信息（精简版）
+   * 只返回 AI 策略分析所需的关键字段
+   */
+  async getPositionForAI(): Promise<{
+    hasPosition: boolean;
+    positions?: Array<{
+      side: 'LONG' | 'SHORT';
+      size: string;
+      leverage: string;
+      unrealizedPnl: string;
+      pnlPercent: string;
+    }>;
+    totalPnl?: string;
+    netPosition?: {
+      side: 'LONG' | 'SHORT' | 'NEUTRAL';
+      size: string;
+    };
+  }> {
+    const positions = await this.getSinglePosition({ symbol: 'cmt_btcusdt' });
+
+    if (!positions || positions.length === 0) {
+      return {
+        hasPosition: false
+      };
+    }
+
+    // 精简每个持仓的数据
+    const simplifiedPositions = positions.map(position => {
+      const pnl = parseFloat(position.unrealizePnl);
+      const openValue = parseFloat(position.open_value);
+      const pnlPercent = ((pnl / openValue) * 100).toFixed(4);
+
+      return {
+        side: position.side === 'LONG' ? 'LONG' as const : 'SHORT' as const,
+        size: position.size,
+        leverage: position.leverage,
+        unrealizedPnl: position.unrealizePnl,
+        pnlPercent: pnlPercent
+      };
+    });
+
+    // 计算总盈亏
+    const totalPnl = positions.reduce((sum, p) => sum + parseFloat(p.unrealizePnl), 0).toFixed(5);
+
+    // 计算净持仓
+    const longSize = positions
+      .filter(p => p.side === 'LONG')
+      .reduce((sum, p) => sum + parseFloat(p.size), 0);
+    const shortSize = positions
+      .filter(p => p.side === 'SHORT')
+      .reduce((sum, p) => sum + parseFloat(p.size), 0);
+
+    const netSize = Math.abs(longSize - shortSize);
+    const netSide = longSize > shortSize ? 'LONG' : (shortSize > longSize ? 'SHORT' : 'NEUTRAL');
+
+    return {
+      hasPosition: true,
+      positions: simplifiedPositions,
+      totalPnl: totalPnl,
+      netPosition: {
+        side: netSide as 'LONG' | 'SHORT' | 'NEUTRAL',
+        size: netSize.toFixed(4)
+      }
+    };
+  }
 }
 
 /**
