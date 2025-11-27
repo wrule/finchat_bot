@@ -2302,6 +2302,37 @@ export class WeexApiClient {
       bidAskRatio
     };
   }
+
+  /**
+   * AI 专用：获取完整市场数据（汇总版）
+   * 包含多个时间周期的K线数据和订单簿数据
+   * @param symbol - 交易对，例如 'cmt_btcusdt'
+   */
+  async getMarketDataForAI(symbol: string) {
+    console.log(`正在获取 ${symbol} 的市场数据...`);
+
+    // 并行获取所有数据
+    const [kline15m, kline1h, kline4h, orderBook] = await Promise.all([
+      this.getKlineForAI(symbol, '15m', 100),
+      this.getKlineForAI(symbol, '1h', 100),
+      this.getKlineForAI(symbol, '4h', 100),
+      this.getOrderBookForAI(symbol, 10)
+    ]);
+
+    console.log(`✅ 市场数据获取完成`);
+
+    return {
+      symbol,
+      timestamp: new Date().toISOString(),
+      currentPrice: orderBook.bestBid,  // 使用最优买价作为当前价格
+      klines: {
+        '15m': kline15m,
+        '1h': kline1h,
+        '4h': kline4h
+      },
+      orderBook
+    };
+  }
 }
 
 /**
