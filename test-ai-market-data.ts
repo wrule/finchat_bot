@@ -6,7 +6,7 @@ async function testAIMarketData() {
     process.env.WEEX_API_KEY || '',
     process.env.WEEX_SECRET_KEY || '',
     process.env.WEEX_PASSPHRASE || '',
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('=== 测试 AI 专用市场数据汇总接口 ===\n');

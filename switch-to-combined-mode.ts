@@ -10,7 +10,7 @@ async function switchToCombinedMode() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('=== 切换到全仓 + 合并模式 ===\n');

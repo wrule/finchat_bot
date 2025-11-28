@@ -6,7 +6,7 @@ async function closeSinglePosition() {
     process.env.WEEX_API_KEY || '',
     process.env.WEEX_SECRET_KEY || '',
     process.env.WEEX_PASSPHRASE || '',
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('=== 查询并平掉单个仓位 ===\n');

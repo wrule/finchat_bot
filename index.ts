@@ -21,7 +21,7 @@ const weexClient = new WeexApiClient(
   process.env.WEEX_API_KEY || '',
   process.env.WEEX_SECRET_KEY || '',
   process.env.WEEX_PASSPHRASE || '',
-  'https://pro-openapi.weex.tech'
+  'https://api-contract.weex.com'
 );
 
 /**

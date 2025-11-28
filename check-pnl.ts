@@ -6,7 +6,7 @@ async function checkPnL() {
     process.env.WEEX_API_KEY || '',
     process.env.WEEX_SECRET_KEY || '',
     process.env.WEEX_PASSPHRASE || '',
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('=== 查询持仓盈亏 ===\n');

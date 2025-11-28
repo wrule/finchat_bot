@@ -10,7 +10,7 @@ async function checkCurrentPositions() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('查询 BTC/USDT 当前持仓...\n');

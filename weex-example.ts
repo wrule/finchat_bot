@@ -12,7 +12,7 @@ async function testGetServerTime() {
     '', // API Key（公共接口不需要）
     '', // Secret Key
     '', // Access Passphrase
-    'https://pro-openapi.weex.tech'  // 基础 URL
+    'https://api-contract.weex.com'  // 基础 URL
   );
 
   try {
@@ -490,7 +490,7 @@ async function testGetAccount() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -642,7 +642,7 @@ async function testGetAccountAssets() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -745,7 +745,7 @@ async function testGetAccountBills() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -915,7 +915,7 @@ async function testPlaceOrder() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -1196,7 +1196,7 @@ async function testInternalWithdrawal() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -1377,7 +1377,7 @@ async function testGetFills() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -1562,7 +1562,7 @@ async function testGetSinglePosition() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -1671,7 +1671,7 @@ async function testGetUserSettings() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -1837,7 +1837,7 @@ async function testChangeLeverage() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   console.log('📋 Change Leverage 接口说明');
@@ -1936,7 +1936,7 @@ async function testGetOrderBookDepth() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -2123,7 +2123,7 @@ async function testGetAllTickers() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -2286,7 +2286,7 @@ async function testGetSingleTicker() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -2529,7 +2529,7 @@ async function testUploadAiLog() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -2701,7 +2701,7 @@ async function testGetTrades() {
     '',
     '',
     '',
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -2878,7 +2878,7 @@ async function testChangeHoldModel() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -3002,7 +3002,7 @@ async function testAdjustMargin() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
@@ -3217,7 +3217,7 @@ async function testContractOpenAndClose() {
     apiKey,
     secretKey,
     passphrase,
-    'https://pro-openapi.weex.tech'
+    'https://api-contract.weex.com'
   );
 
   try {
