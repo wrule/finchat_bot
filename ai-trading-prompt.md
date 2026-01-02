@@ -24,7 +24,7 @@
 | 模式 | **� 空仓持有策略** |
 | 止盈价位 | **86690 USDT** |
 | 加仓数量 | **0.001 BTC** |
-| 允许操作 | **平空（止盈）、加仓空单** |
+| 允许操作 | **开空、平空（止盈）、加仓空单** |
 
 ### 决策逻辑
 
@@ -61,7 +61,7 @@
     "riskAssessment": "风险评估"
   },
   "signal": {
-    "action": "HOLD|OPEN_LONG|OPEN_SHORT|CLOSE_LONG|CLOSE_SHORT|ADD_LONG|ADD_SHORT",
+    "action": "HOLD|OPEN_SHORT|CLOSE_SHORT|ADD_SHORT",
     "confidence": "HIGH|MEDIUM|LOW",
     "reasoning": "决策理由"
   },
@@ -69,8 +69,8 @@
     "hasOrder": true,
     "orders": [
       {
-        "type": "1|2|3|4",
-        "typeDescription": "1-开多|2-开空|3-平多|4-平空",
+        "type": "2|4",
+        "typeDescription": "2-开空|4-平空",
         "size": "0.0150",
         "priceType": "MARKET",
         "price": "95000.0",
@@ -83,9 +83,9 @@
 ```
 
 **字段说明**：
-- `type`：字符串，"1"开多/"2"开空/"3"平多/"4"平空
+- `type`：字符串，"2"开空/"4"平空
 - `size`：字符串，如 "0.0150"
-- `orders` 可包含多个订单（如同时开多开空、同时平多平空）
+- `orders` 可包含多个订单（如多次开空、平空）
 
 ## 示例（空仓持有策略）
 
