@@ -14,7 +14,7 @@ async function changeLeverage() {
   );
 
   const symbol = 'cmt_btcusdt';
-  const targetLeverage = '30';
+  const targetLeverage = '21';
 
   console.log('=== 调整杠杆到 ' + targetLeverage + 'x ===\n');
 
