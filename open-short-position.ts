@@ -12,7 +12,7 @@ async function openShortPosition() {
   console.log('=== 开空仓 ===\n');
 
   // 开空仓 0.005 BTC
-  console.log('开空仓 0.005 BTC...\n');
+  console.log('开空仓 0.001 BTC...\n');
   
   const order = await client.openPosition('0.005', 'SHORT');
   
