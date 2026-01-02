@@ -65,12 +65,12 @@ async function changeLeverage() {
   const modeName = currentMarginMode === 1 ? '全仓' : '逐仓';
   console.log('步骤 3: 修改杠杆到 ' + targetLeverage + 'x (' + modeName + '模式)...\n');
 
-  // 构建请求参数
+  // 构建请求参数（杠杆值应为字符串）
   const leverageParams = {
     symbol: symbol,
     marginMode: currentMarginMode,
-    longLeverage: Number(targetLeverage),
-    shortLeverage: Number(targetLeverage),  // 全仓模式下必须与 longLeverage 相同
+    longLeverage: targetLeverage,
+    shortLeverage: targetLeverage,  // 全仓模式下必须与 longLeverage 相同
   };
   console.log('请求参数:', JSON.stringify(leverageParams, null, 2));
   console.log('');

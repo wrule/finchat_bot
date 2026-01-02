@@ -1793,13 +1793,11 @@ export class WeexApiClient {
       bodyObj.shortLeverage = params.longLeverage;
     }
 
-    const body = JSON.stringify(bodyObj);
-
     try {
       const response = await this.sendRequestPost<ChangeLeverageResponse>(
         requestPath,
-        '',
-        body
+        bodyObj,
+        ''
       );
       return response;
     } catch (error) {
