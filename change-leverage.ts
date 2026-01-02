@@ -14,9 +14,9 @@ async function changeLeverage() {
   );
 
   const symbol = 'cmt_btcusdt';
-  const targetLeverage = '50';
+  const targetLeverage = '40';
 
-  console.log('=== 调整杠杆到 50x ===\n');
+  console.log('=== 调整杠杆到 40x ===\n');
 
   // 步骤 1: 查询当前杠杆设置
   console.log('步骤 1: 查询当前杠杆设置...\n');
@@ -37,7 +37,7 @@ async function changeLeverage() {
     console.log('');
   }
 
-  // 步骤 2: 修改杠杆到 50x (全仓模式)
+  // 步骤 2: 修改杠杆到 40x (全仓模式)
   console.log('步骤 2: 修改杠杆到 ' + targetLeverage + 'x (全仓模式)...\n');
 
   try {
@@ -96,8 +96,8 @@ async function changeLeverage() {
       console.log('');
 
       const crossLev = parseFloat(current.cross_leverage);
-      if (crossLev === 50) {
-        console.log('✅ 杠杆已成功调整到 50x！');
+      if (crossLev === 40) {
+        console.log('✅ 杠杆已成功调整到 40x！');
       } else {
         console.log('⚠️  杠杆可能未完全调整，当前全仓杠杆:', crossLev + 'x');
       }
