@@ -14,7 +14,7 @@ async function changeLeverage() {
   );
 
   const symbol = 'cmt_btcusdt';
-  const targetLeverage = 20;
+  const targetLeverage = '20';
 
   console.log('=== 调整杠杆到 ' + targetLeverage + 'x ===\n');
 
@@ -69,7 +69,6 @@ async function changeLeverage() {
   const leverageParams = {
     symbol: symbol,
     marginMode: currentMarginMode,
-    longLeverage: targetLeverage,
     shortLeverage: targetLeverage,  // 全仓模式下必须与 longLeverage 相同
   };
   console.log('请求参数:', JSON.stringify(leverageParams, null, 2));
