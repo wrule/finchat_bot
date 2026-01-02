@@ -20,7 +20,7 @@ const openrouter = createOpenRouter({
 /**
  * 使用 DeepSeek-R1 模型
  */
-const model = openrouter('deepseek/deepseek-r1');
+const model = openrouter('deepseek/deepseek-v3.2');
 
 /**
  * 生成 AI 交易信号
