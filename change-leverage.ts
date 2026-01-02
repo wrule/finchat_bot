@@ -69,8 +69,8 @@ async function changeLeverage() {
   const leverageParams = {
     symbol: symbol,
     marginMode: currentMarginMode,
-    longLeverage: targetLeverage,
-    shortLeverage: targetLeverage,  // 全仓模式下必须与 longLeverage 相同
+    longLeverage: Number(targetLeverage),
+    shortLeverage: Number(targetLeverage),  // 全仓模式下必须与 longLeverage 相同
   };
   console.log('请求参数:', JSON.stringify(leverageParams, null, 2));
   console.log('');
