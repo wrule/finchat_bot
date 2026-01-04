@@ -194,14 +194,16 @@ export class WeexApiClientMock extends WeexApiClient {
     const limit = params?.limit || 20;
 
     return {
-      items: bills.slice(0, limit).map(bill => ({
-        id: bill.id,
+      items: bills.slice(0, limit).map((bill, index) => ({
+        billId: index + 1,
+        coin: 'USDT',
         symbol: bill.symbol,
         businessType: bill.type,
         amount: bill.amount,
         balance: bill.balance,
-        fee: bill.fee,
-        created_time: bill.time
+        fillFee: bill.fee,
+        transferReason: 'trade',
+        ctime: bill.time
       })),
       hasNextPage: false
     } as unknown as BillsResponse;
