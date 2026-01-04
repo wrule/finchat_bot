@@ -162,7 +162,7 @@ export class MockStore {
     side: 'LONG' | 'SHORT',
     size: string,
     price: string,
-    leverage: string = '10'
+    leverage: string = '20'
   ): Promise<{ order_id: string; client_oid: string }> {
     const sizeNum = parseFloat(size);
     const priceNum = parseFloat(price);

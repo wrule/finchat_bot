@@ -257,7 +257,7 @@ export class WeexApiClientMock extends WeexApiClient {
         frozen: balance.frozen.toFixed(2)
       },
       leverage: {
-        current: positions.length > 0 ? positions[0].leverage : '10',
+        current: positions.length > 0 ? positions[0].leverage : '20',
         mode: 'SHARED'
       },
       margin: {
