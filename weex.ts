@@ -2602,14 +2602,14 @@ export class WeexApiClient {
    * 整合账单历史、市场数据、账户风险和持仓信息
    * 这是为 AI 决策提供的完整上下文数据
    * @param symbol - 交易对，例如 'cmt_btcusdt'
-   * @param billsLimit - 账单历史记录数量，默认 10
+   * @param billsLimit - 账单历史记录数量，默认 3
    * @param klineLimit - K线数据数量，默认 50
    * @param saveToFile - 是否保存到文件，默认 true
    * @param filePath - 保存的文件路径，默认 'ai-trading-context.json'
    */
   async getAITradingContext(
     symbol: string,
-    billsLimit: number = 10,
+    billsLimit: number = 3,
     klineLimit: number = 50,
     saveToFile: boolean = true,
     filePath: string = 'ai-trading-context.json'
@@ -2689,14 +2689,14 @@ export class WeexApiClient {
    * AI 专用：获取格式化的交易上下文文本
    * 将完整的交易上下文转换为易读的文本格式，适合直接传递给 AI
    * @param symbol - 交易对，例如 'cmt_btcusdt'
-   * @param billsLimit - 账单历史记录数量，默认 10
+   * @param billsLimit - 账单历史记录数量，默认 3
    * @param klineLimit - K线数据数量，默认 50
    * @param saveToFile - 是否保存到文件，默认 true
    * @param filePath - 保存的文件路径，默认 'ai-trading-context.txt'
    */
   async getAITradingContextText(
     symbol: string,
-    billsLimit: number = 10,
+    billsLimit: number = 3,
     klineLimit: number = 50,
     saveToFile: boolean = true,
     filePath: string = 'ai-trading-context.txt'
@@ -2712,8 +2712,11 @@ export class WeexApiClient {
     // 1. 交易历史
     lines.push('最近交易记录:');
 
-    // 显示最近的交易记录（只显示前10条）
-    const tradesToShow = context.tradingHistory.recentTrades.slice(0, 10);
+    // 显示最近的 3 条交易记录，按时间从小到大排序（最早的在上，最新的在下）
+    const tradesToShow = context.tradingHistory.recentTrades
+      .slice(0, 3)
+      .sort((a: any, b: any) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
     tradesToShow.forEach((trade: any, index: number) => {
       lines.push(`交易 ${index + 1}:`);
       lines.push(`  时间: ${trade.time}`);
