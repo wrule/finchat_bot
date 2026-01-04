@@ -157,6 +157,12 @@ async function checkAccountBalanceMock() {
     console.log('保证金:');
     console.log(`  已用保证金:     ${formatNumber(risk.margin.used, 4)} USDT`);
     console.log(`  可用保证金:     ${formatNumber(risk.margin.available, 4)} USDT`);
+    const usedMargin = parseFloat(risk.margin.used);
+    const availableMargin = parseFloat(risk.margin.available);
+    const marginUsageRate = usedMargin + availableMargin > 0
+      ? (usedMargin / (usedMargin + availableMargin) * 100).toFixed(1)
+      : '0.0';
+    console.log(`  ⚠️ 使用率:       ${marginUsageRate}% (硬顶 60%)`);
 
     // 4. 虚拟盘统计
     console.log('');

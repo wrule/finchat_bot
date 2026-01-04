@@ -2811,6 +2811,12 @@ export class WeexApiClient {
     lines.push('保证金:');
     lines.push(`  已使用: ${risk.margin.used} USDT`);
     lines.push(`  可用: ${risk.margin.available} USDT`);
+    const usedMargin = parseFloat(risk.margin.used);
+    const availableMargin = parseFloat(risk.margin.available);
+    const marginUsageRate = usedMargin + availableMargin > 0
+      ? (usedMargin / (usedMargin + availableMargin) * 100).toFixed(1)
+      : '0.0';
+    lines.push(`  ⚠️ 使用率: ${marginUsageRate}% (硬顶 60%)`);
     lines.push('');
     lines.push('持仓统计:');
     lines.push(`  持仓数量: ${risk.positions.count}`);

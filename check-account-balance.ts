@@ -151,17 +151,11 @@ async function checkAccountBalance() {
     console.log(`冻结余额:         ${formatNumber(risk.balance.frozen, 4)} USDT`);
     console.log(`已用保证金:       ${formatNumber(risk.margin.used, 4)} USDT`);
     console.log(`可用保证金:       ${formatNumber(risk.margin.available, 4)} USDT`);
-    console.log(`保证金使用率:     ${formatNumber(risk.margin.ratio, 2)}%`);
+    const marginRatio = parseFloat(risk.margin.ratio);
+    const marginWarning = marginRatio > 60 ? ' ⚠️ 超过硬顶!' : '';
+    console.log(`保证金使用率:     ${formatNumber(marginRatio, 2)}% (硬顶 60%)${marginWarning}`);
     console.log(`当前杠杆:         ${risk.leverage.current}x`);
     console.log(`杠杆模式:         ${risk.leverage.mode}`);
-    console.log(`实际杠杆倍数:     ${formatNumber(risk.risk.leverageRatio, 2)}x`);
-    console.log(`风险等级:         ${risk.risk.level}`);
-
-    // 风险等级颜色
-    let riskColor = '🟢';
-    if (risk.risk.level === 'MEDIUM') riskColor = '🟡';
-    if (risk.risk.level === 'HIGH') riskColor = '🔴';
-    console.log(`风险状态:         ${riskColor}`);
 
     // 4. 总结
     console.log('');
@@ -170,10 +164,9 @@ async function checkAccountBalance() {
     console.log('='.repeat(80));
 
     console.log(`💰 总资产:         ${formatNumber(totalEquity, 4)} USDT`);
-    console.log(`� 可用余额:       ${formatNumber(totalAvailable, 4)} USDT (${formatNumber((totalAvailable / totalEquity) * 100, 2)}%)`);
-    console.log(`� 冻结余额:       ${formatNumber(totalFrozen, 4)} USDT (${formatNumber((totalFrozen / totalEquity) * 100, 2)}%)`);
+    console.log(`💵 可用余额:       ${formatNumber(totalAvailable, 4)} USDT (${formatNumber((totalAvailable / totalEquity) * 100, 2)}%)`);
+    console.log(`🔒 冻结余额:       ${formatNumber(totalFrozen, 4)} USDT (${formatNumber((totalFrozen / totalEquity) * 100, 2)}%)`);
     console.log(`📈 未实现盈亏:     ${formatNumber(totalUnrealizedPnl, 4)} USDT`);
-    console.log(`⚠️  风险等级:       ${risk.risk.level} ${riskColor}`);
     console.log(`📊 持仓数量:       ${positions.length} 个`);
     console.log(`📊 持仓总价值:     ${formatNumber(risk.positions.totalValue, 4)} USDT`);
     console.log(`📊 持仓总盈亏:     ${formatNumber(risk.positions.totalUnrealizedPnl, 4)} USDT`);
