@@ -19,7 +19,7 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY || '',
 });
 
-const model = openrouter('deepseek/deepseek-r1');
+const model = openrouter('deepseek/deepseek-v3.2');
 
 /**
  * 创建 LangChain StructuredOutputParser
