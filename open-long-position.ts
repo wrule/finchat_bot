@@ -11,10 +11,10 @@ async function openLongPosition() {
 
   console.log('=== 开多仓 ===\n');
 
-  // 开多仓 0.005 BTC
-  console.log('开多仓 0.005 BTC...\n');
+  // 开多仓 0.0002 BTC
+  console.log('开多仓 0.0002 BTC...\n');
   
-  const order = await client.openPosition('0.005', 'LONG');
+  const order = await client.openPosition('0.0002', 'LONG');
   
   console.log('✅ 开仓成功！');
   console.log('订单 ID:', order.order_id);
