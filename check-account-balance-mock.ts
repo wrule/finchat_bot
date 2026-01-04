@@ -133,23 +133,30 @@ async function checkAccountBalanceMock() {
 
     console.log('');
     console.log('='.repeat(80));
-    console.log('⚠️  账户风险');
+    console.log('📊 账户估值');
     console.log('='.repeat(80));
-    console.log(`总余额:           ${formatNumber(risk.balance.total, 4)} USDT`);
-    console.log(`可用余额:         ${formatNumber(risk.balance.available, 4)} USDT`);
-    console.log(`冻结余额:         ${formatNumber(risk.balance.frozen, 4)} USDT`);
-    console.log(`已用保证金:       ${formatNumber(risk.margin.used, 4)} USDT`);
-    console.log(`可用保证金:       ${formatNumber(risk.margin.available, 4)} USDT`);
-    console.log(`保证金使用率:     ${formatNumber(risk.margin.ratio, 2)}%`);
-    console.log(`当前杠杆:         ${risk.leverage.current}x`);
-    console.log(`杠杆模式:         ${risk.leverage.mode}`);
-    console.log(`实际杠杆倍数:     ${formatNumber(risk.risk.leverageRatio, 2)}x`);
-    console.log(`风险等级:         ${risk.risk.level}`);
-
-    let riskColor = '🟢';
-    if (risk.risk.level === 'MEDIUM') riskColor = '🟡';
-    if (risk.risk.level === 'HIGH') riskColor = '🔴';
-    console.log(`风险状态:         ${riskColor}`);
+    console.log(`💰 初始资金:       ${formatNumber(risk.initialBalance, 2)} USDT`);
+    console.log(`💰 当前估值:       ${formatNumber(risk.currentAccountValue, 2)} USDT`);
+    if (risk.profit) {
+      const profitSign = parseFloat(risk.profit.total) >= 0 ? '+' : '';
+      const percentSign = parseFloat(risk.profit.percent) >= 0 ? '+' : '';
+      console.log(`📈 总盈亏:         ${profitSign}${formatNumber(risk.profit.total, 2)} USDT (${percentSign}${formatNumber(risk.profit.percent, 2)}%)`);
+      console.log(`   已实现盈亏:    ${formatNumber(risk.profit.realized, 2)} USDT`);
+      console.log(`   未实现盈亏:    ${formatNumber(risk.profit.unrealized, 2)} USDT`);
+    }
+    console.log('');
+    console.log('余额:');
+    console.log(`  总余额:         ${formatNumber(risk.balance.total, 4)} USDT`);
+    console.log(`  可用余额:       ${formatNumber(risk.balance.available, 4)} USDT`);
+    console.log(`  冻结余额:       ${formatNumber(risk.balance.frozen, 4)} USDT`);
+    console.log('');
+    console.log('杠杆:');
+    console.log(`  当前杠杆:       ${risk.leverage.current}x`);
+    console.log(`  杠杆模式:       ${risk.leverage.mode}`);
+    console.log('');
+    console.log('保证金:');
+    console.log(`  已用保证金:     ${formatNumber(risk.margin.used, 4)} USDT`);
+    console.log(`  可用保证金:     ${formatNumber(risk.margin.available, 4)} USDT`);
 
     // 4. 虚拟盘统计
     console.log('');

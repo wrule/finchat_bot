@@ -214,23 +214,43 @@ export class WeexApiClientMock extends WeexApiClient {
    */
   async getAccountRiskForAI(symbol: string): Promise<any> {
     await this.initMockStore();
+    const state = this.mockStore!.getState();
     const balance = this.mockStore!.getBalance();
     const currentPrice = await this.fetchCurrentPrice();
     const { positions, totalPnl } = this.mockStore!.calculateUnrealizedPnl(currentPrice);
 
     const totalValue = positions.reduce((sum, p) => sum + parseFloat(p.open_value), 0);
-    const accountValue = balance.total + totalPnl;
-    const leverageRatio = accountValue > 0 ? totalValue / accountValue : 0;
-    const marginRatio = balance.total > 0 ? (balance.frozen / balance.total) * 100 : 0;
 
-    let riskLevel = 'LOW';
-    if (marginRatio > 80 || leverageRatio > 15) riskLevel = 'CRITICAL';
-    else if (marginRatio > 60 || leverageRatio > 10) riskLevel = 'HIGH';
-    else if (marginRatio > 40 || leverageRatio > 5) riskLevel = 'MEDIUM';
+    // 计算已实现盈亏
+    const bills = this.mockStore!.getBills();
+    const closeBills = bills.filter(b => b.type === 'close_long' || b.type === 'close_short');
+    const realizedPnl = closeBills.reduce((sum, b) => sum + parseFloat(b.amount), 0);
+
+    // 当前账户估值 = 可用余额 + 冻结余额 + 未实现盈亏
+    const currentAccountValue = balance.available + balance.frozen + totalPnl;
+
+    // 总盈亏 = 已实现盈亏 + 未实现盈亏
+    const totalProfit = realizedPnl + totalPnl;
+
+    // 相对于初始资金的盈亏百分比
+    const profitPercent = state.initialBalance > 0
+      ? (totalProfit / state.initialBalance) * 100
+      : 0;
 
     return {
       symbol,
       timestamp: new Date().toISOString(),
+      // 初始资金
+      initialBalance: state.initialBalance.toFixed(2),
+      // 当前账户估值
+      currentAccountValue: currentAccountValue.toFixed(2),
+      // 盈亏
+      profit: {
+        total: totalProfit.toFixed(2),
+        percent: profitPercent.toFixed(2),
+        realized: realizedPnl.toFixed(2),
+        unrealized: totalPnl.toFixed(2)
+      },
       balance: {
         total: balance.total.toFixed(2),
         available: balance.available.toFixed(2),
@@ -242,13 +262,7 @@ export class WeexApiClientMock extends WeexApiClient {
       },
       margin: {
         used: balance.frozen.toFixed(2),
-        available: balance.available.toFixed(2),
-        ratio: marginRatio.toFixed(2)
-      },
-      risk: {
-        level: riskLevel,
-        leverageRatio: leverageRatio.toFixed(2),
-        marginRatio: marginRatio.toFixed(2)
+        available: balance.available.toFixed(2)
       },
       positions: {
         count: positions.length,

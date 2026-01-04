@@ -2777,29 +2777,42 @@ export class WeexApiClient {
 
     // 3. 账户风险
     lines.push('账户风险:');
+
+    // 使用 any 类型以支持 Mock 版本的扩展字段
+    const risk = context.accountRisk as any;
+
+    // 账户估值（如果有初始资金和当前估值）
+    if (risk.initialBalance && risk.currentAccountValue) {
+      lines.push('账户估值:');
+      lines.push(`  初始资金: ${risk.initialBalance} USDT`);
+      lines.push(`  当前估值: ${risk.currentAccountValue} USDT`);
+      if (risk.profit) {
+        const profitSign = parseFloat(risk.profit.total) >= 0 ? '+' : '';
+        const percentSign = parseFloat(risk.profit.percent) >= 0 ? '+' : '';
+        lines.push(`  总盈亏: ${profitSign}${risk.profit.total} USDT (${percentSign}${risk.profit.percent}%)`);
+        lines.push(`  已实现盈亏: ${risk.profit.realized} USDT`);
+        lines.push(`  未实现盈亏: ${risk.profit.unrealized} USDT`);
+      }
+      lines.push('');
+    }
+
     lines.push('余额:');
-    lines.push(`  总余额: ${context.accountRisk.balance.total} USDT`);
-    lines.push(`  可用: ${context.accountRisk.balance.available} USDT`);
-    lines.push(`  冻结: ${context.accountRisk.balance.frozen} USDT`);
+    lines.push(`  总余额: ${risk.balance.total} USDT`);
+    lines.push(`  可用: ${risk.balance.available} USDT`);
+    lines.push(`  冻结: ${risk.balance.frozen} USDT`);
     lines.push('');
     lines.push('杠杆:');
-    lines.push(`  当前杠杆: ${context.accountRisk.leverage.current}x`);
-    lines.push(`  保证金模式: ${context.accountRisk.leverage.mode}`);
+    lines.push(`  当前杠杆: ${risk.leverage.current}x`);
+    lines.push(`  保证金模式: ${risk.leverage.mode}`);
     lines.push('');
     lines.push('保证金:');
-    lines.push(`  已使用: ${context.accountRisk.margin.used} USDT`);
-    lines.push(`  可用: ${context.accountRisk.margin.available} USDT`);
-    lines.push(`  使用率: ${context.accountRisk.margin.ratio}%`);
-    lines.push('');
-    lines.push('风险评估:');
-    lines.push(`  风险等级: ${context.accountRisk.risk.level}`);
-    lines.push(`  实际杠杆率: ${context.accountRisk.risk.leverageRatio}x`);
-    lines.push(`  保证金比率: ${context.accountRisk.risk.marginRatio}%`);
+    lines.push(`  已使用: ${risk.margin.used} USDT`);
+    lines.push(`  可用: ${risk.margin.available} USDT`);
     lines.push('');
     lines.push('持仓统计:');
-    lines.push(`  持仓数量: ${context.accountRisk.positions.count}`);
-    lines.push(`  持仓总价值: ${context.accountRisk.positions.totalValue} USDT`);
-    lines.push(`  未实现盈亏: ${context.accountRisk.positions.totalUnrealizedPnl} USDT`);
+    lines.push(`  持仓数量: ${risk.positions.count}`);
+    lines.push(`  持仓总价值: ${risk.positions.totalValue} USDT`);
+    lines.push(`  未实现盈亏: ${risk.positions.totalUnrealizedPnl} USDT`);
     lines.push('');
 
     // 4. 当前持仓
