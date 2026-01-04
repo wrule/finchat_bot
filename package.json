@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "mock": "tsx index-mock.ts",
+    "mock:positions": "tsx check-all-positions-mock.ts",
+    "mock:balance": "tsx check-account-balance-mock.ts",
+    "mock:long": "tsx open-long-position-mock.ts",
+    "mock:short": "tsx open-short-position-mock.ts",
+    "mock:close": "tsx close-single-position-mock.ts"
   },
   "repository": "https://github.com/wrule/scty_bot.git",
   "license": "MIT",
